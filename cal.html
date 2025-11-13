@@ -181,7 +181,7 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function fmtFull(dt){if(!dt)return''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})+' à '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtFull(dt){if(!dt)return''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit'})+'+pad(d.getHours())+':'+pad(d.getMinutes());}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
 // Variables de navigation
@@ -352,4 +352,3 @@ renderCalendar();
 </script>
 </body>
 </html>
-
