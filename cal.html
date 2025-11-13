@@ -1,81 +1,69 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendrier HAROPA</title>
-
-<!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
-
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #121212;
-    color: #fff;
-  }
-  #calendar {
-    max-width: 1000px;
-    margin: 20px auto;
-    background: #1a1a1a;
-    border-radius: 10px;
-    padding: 10px;
-  }
-
-  /* Ajustement police des événements */
-  .fc-event-title {
-    font-size: 0.85em;
-    white-space: normal;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intégration Google Calendar avec FullCalendar</title>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+  <script src='https://apis.google.com/js/api.js'></script>
 </head>
 <body>
+  <div id="calendar"></div>
 
-<div id="calendar"></div>
-
-<!-- FullCalendar JS -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const calendarEl = document.getElementById('calendar');
-
-  // Calcul des dates pour afficher semaine passée → 2 semaines suivantes
-  const today = new Date();
-  const firstDayOfWeek = new Date(today);
-  firstDayOfWeek.setDate(today.getDate() - today.getDay() + 1 - 7); // lundi semaine passée
-  const lastDay = new Date(firstDayOfWeek);
-  lastDay.setDate(firstDayOfWeek.getDate() + 27); // 4 semaines en tout
-
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    plugins: [ FullCalendar.GoogleCalendar ],
-    initialView: 'timeGridWeek',
-    firstDay: 1, // lundi
-    googleCalendarApiKey: 'TA_CLE_API_ICI', // <-- remplacer par votre clé API
-    events: {
-      googleCalendarId: 'receptionroulier@gmail.com'
-    },
-    headerToolbar: {
-      left: '',
-      center: 'title',
-      right: ''
-    },
-    locale: 'fr',
-    height: 'auto',
-    visibleRange: {
-      start: firstDayOfWeek,
-      end: lastDay
+  <script>
+    // Initialisation de l'API Google
+    function start() {
+      gapi.client.init({
+        apiKey: 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo',
+        clientId: '82772284655-emqg1q38nhc0gsuj9ent9gju9s5eloud.apps.googleusercontent.com',
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+        scope: 'https://www.googleapis.com/auth/calendar.readonly'
+      }).then(function() {
+        return gapi.auth2.getAuthInstance().signIn();
+      }).then(function() {
+        loadCalendar();
+      }).catch(function(error) {
+        console.error("Erreur d'initialisation ou d'authentification :", error);
+      });
     }
-  });
 
-  calendar.render();
-});
-</script>
+    // Charger les événements et afficher le calendrier
+    function loadCalendar() {
+      gapi.client.calendar.events.list({
+        'calendarId': 'receptionroulier@gmail.com',
+        'timeMin': (new Date()).toISOString(),
+        'showDeleted': false,
+        'singleEvents': true,
+        'maxResults': 20,
+        'orderBy': 'startTime'
+      }).then(function(response) {
+        console.log("Réponse de l'API :", response);
+        if (response.result.items && response.result.items.length > 0) {
+          const events = response.result.items.map(event => ({
+            title: event.summary,
+            start: event.start.dateTime || event.start.date,
+            end: event.end.dateTime || event.end.date,
+          }));
+          const calendarEl = document.getElementById('calendar');
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            events: events,
+            locale: 'fr'
+          });
+          calendar.render();
+        } else {
+          console.warn("Aucun événement trouvé dans ce calendrier.");
+          alert("Aucun événement trouvé dans ce calendrier. Vérifie le partage et les autorisations.");
+        }
+      }).catch(function(error) {
+        console.error("Erreur lors de la récupération des événements :", error);
+        alert("Erreur lors de la récupération des événements. Voir la console pour plus de détails.");
+      });
+    }
 
+    // Charger l'API Google
+    gapi.load('client:auth2', start);
+  </script>
 </body>
 </html>
-
-
-
