@@ -7,12 +7,12 @@
 
 <style>
 :root{
-  --bg:#1b1d20; /* plus clair */
-  --card:#24282c; 
-  --muted:#aaa;
-  --text:#eaeaea;
+  --bg:#d0d2d5; /* fond gris plus clair */
+  --card:#f0f1f3; 
+  --muted:#777;
+  --text:#222;
   --accent:#00e5ff;
-  --gap:12px;
+  --gap:6px; /* espace plus fin entre cases */
   --days-font:14px;
   --event-font:13px;
 }
@@ -31,6 +31,8 @@ body{
 header{
   display:flex;
   justify-content:center;
+  align-items:center;
+  gap:16px;
   margin-bottom:12px;
 }
 header h1{
@@ -39,12 +41,19 @@ header h1{
   color:var(--accent);
   text-align:center;
 }
+.nav-btn{
+  cursor:pointer;
+  font-size:20px;
+  font-weight:bold;
+  color:var(--text);
+  user-select:none;
+}
 
 .calendar {
   background: var(--card);
-  border-radius:16px; /* coins arrondis */
+  border-radius:16px;
   padding:16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
 .grid {
@@ -54,23 +63,24 @@ header h1{
 }
 
 .day {
-  background: #1d2023;
+  background: #e3e4e6;
   border-radius:12px;
-  min-height:120px; /* cases plus grandes */
+  min-height:120px;
   padding:10px;
   box-sizing:border-box;
-  border:1px solid rgba(255,255,255,0.05);
+  border:1px solid rgba(0,0,0,0.05);
   overflow:hidden;
   transition: all 0.2s;
 }
 
 .day.today {
-  transform: scale(1.05);
-  background-color: rgba(255,255,255,0.08);
+  transform: scale(1.03);
+  background-color: #c5c6c8;
 }
 
 .day.past {
-  background-color: rgba(0,0,0,0.15);
+  background-color: #b0b1b3;
+  color:#555;
 }
 
 .day-header{
@@ -78,21 +88,18 @@ header h1{
   justify-content:space-between;
   align-items:center;
   font-size:var(--days-font);
-  color:var(--muted);
   margin-bottom:6px;
-  flex-direction: row-reverse; /* inverse date/jour */
+  flex-direction: row-reverse;
 }
 
 .day .date {
   font-weight:600;
-  color:var(--text);
-  font-size:14px;
 }
 
 .events {
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:3px;
   overflow:hidden;
   max-height: calc((100vh - 250px)/4);
 }
@@ -105,7 +112,7 @@ header h1{
   line-height:1.1;
   overflow:hidden;
   cursor:pointer;
-  background:none; /* pas de fond */
+  background:none;
 }
 
 .event .time { min-width:40px; font-weight:600; font-size:12px; }
@@ -119,9 +126,9 @@ header h1{
   padding-left:6px;
 }
 
-/* couleurs par calendrier pour le texte */
-.c-reception { color:#0b8043; }
-.c-smr { color:#1c3cff; }
+/* couleurs texte par calendrier */
+.c-reception { color:#00ff55; } /* vert vif */
+.c-smr { color:#9b5eff; } /* bleu mauve */
 
 /* Responsive */
 @media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -133,34 +140,41 @@ header h1{
   position:fixed;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
-  background:#24282c;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 8px 25px rgba(0,0,0,0.6);
+  background:#f0f1f3;
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
   z-index:1000;
-  color:#fff;
+  color:#222;
+  max-width:500px;
+  width:90%;
 }
-#event-modal h2{ margin-top:0; }
+#event-modal h2{ margin-top:0; font-size:22px; color:#222; }
 #modal-overlay{
   display:none;
   position:fixed; top:0; left:0;
   width:100%; height:100%;
-  background:rgba(0,0,0,0.5);
+  background:rgba(0,0,0,0.4);
   z-index:999;
 }
 #event-modal .close-btn{
   display:inline-block;
-  margin-top:10px;
-  padding:4px 10px;
+  margin-top:15px;
+  padding:6px 14px;
   background:#444;
-  border-radius:6px;
+  color:#fff;
+  border-radius:8px;
   cursor:pointer;
 }
 </style>
 </head>
 <body>
 <div class="container">
-  <header><h1 id="month-title">Mois</h1></header>
+  <header>
+    <span class="nav-btn" id="prev-week">&lt;</span>
+    <h1 id="month-title">Mois</h1>
+    <span class="nav-btn" id="next-week">&gt;</span>
+  </header>
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
   </div>
@@ -169,8 +183,8 @@ header h1{
 <div id="modal-overlay"></div>
 <div id="event-modal">
   <h2 id="modal-title"></h2>
-  <p id="modal-time"></p>
-  <p id="modal-calendar"></p>
+  <p id="modal-start"></p>
+  <p id="modal-end"></p>
   <p id="modal-desc"></p>
   <div class="close-btn" onclick="closeModal()">Fermer</div>
 </div>
@@ -185,54 +199,53 @@ const WEEKS=4;
 
 function fmtDate(d){ return d.toISOString().split('T')[0]; }
 function pad(n){ return n<10?'0'+n:n; }
-function fmtTime(dt){ if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function fmtTime(dt){ if(!dt) return ''; const d=new Date(dt); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
 function shortTitle(s,max=60){ if(!s) return s.length>max?s.slice(0,max-1)+'…':s; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
-const today=new Date();
-const day=today.getDay();
-const mondayThisWeek=new Date(today);
-mondayThisWeek.setDate(today.getDate()-((day+6)%7));
-const mondayLastWeek=new Date(mondayThisWeek);
-mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
-const gridStart=mondayLastWeek;
+let gridStart; // date de départ de la grille
 
-const dates=[];
-for(let w=0;w<WEEKS;w++){
-  for(let i=0;i<7;i++){
-    const d=new Date(gridStart);
-    d.setDate(gridStart.getDate()+w*7+i);
-    dates.push(new Date(d));
+function renderCalendar(startDate){
+  gridStart = new Date(startDate);
+  const today=new Date();
+  const dates=[];
+  for(let w=0;w<WEEKS;w++){
+    for(let i=0;i<7;i++){
+      const d=new Date(gridStart);
+      d.setDate(gridStart.getDate()+w*7+i);
+      dates.push(new Date(d));
+    }
   }
+
+  const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  document.getElementById('month-title').textContent = monthNames[today.getMonth()]+' '+today.getFullYear();
+
+  const gridEl=document.getElementById('grid');
+  gridEl.innerHTML='';
+  dates.forEach(d=>{
+    const dayEl=document.createElement('div');
+    dayEl.className='day';
+    dayEl.dataset.date=fmtDate(d);
+    dayEl.innerHTML=`
+      <div class="day-header">
+        <div class="date">${d.getDate()}</div>
+        <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
+      </div>
+      <div class="events"></div>
+    `;
+    gridEl.appendChild(dayEl);
+  });
+
+  const todayStr = fmtDate(today);
+  for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    const date = dayEl.dataset.date;
+    if(date === todayStr) dayEl.classList.add('today');
+    else if(date < todayStr) dayEl.classList.add('past');
+  }
+
+  loadEvents(dates[0], dates[dates.length-1]);
 }
 
-const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-document.getElementById('month-title').textContent = monthNames[today.getMonth()]+' '+today.getFullYear();
-
-const gridEl=document.getElementById('grid');
-gridEl.innerHTML='';
-dates.forEach(d=>{
-  const dayEl=document.createElement('div');
-  dayEl.className='day';
-  dayEl.dataset.date=fmtDate(d);
-  dayEl.innerHTML=`
-    <div class="day-header">
-      <div class="date">${d.getDate()}</div>
-      <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
-    </div>
-    <div class="events"></div>
-  `;
-  gridEl.appendChild(dayEl);
-});
-
-const todayStr = fmtDate(today);
-for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-  const date = dayEl.dataset.date;
-  if(date === todayStr) dayEl.classList.add('today');
-  else if(date < todayStr) dayEl.classList.add('past');
-}
-
-// fetch events
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)
@@ -244,10 +257,9 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
-const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
-
-(async function loadAll(){
+async function loadEvents(timeMinDate, timeMaxDate){
+  const timeMin=new Date(timeMinDate); timeMin.setHours(0,0,0,0);
+  const timeMax=new Date(timeMaxDate); timeMax.setHours(23,59,59,999);
   try{
     const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString())
       .then(json=>({calendar:c,items:json.items||[]}))
@@ -275,7 +287,8 @@ const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
             eventsByDay[key]=eventsByDay[key]||[];
             eventsByDay[key].push({
               title:it.summary || '(sans titre)',
-              start:null,
+              start:s,
+              end:e,
               allDay:true,
               calendarKey:cal.key,
               description:it.description||''
@@ -288,8 +301,8 @@ const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
           eventsByDay[dayKey]=eventsByDay[dayKey]||[];
           eventsByDay[dayKey].push({
             title:it.summary || '(sans titre)',
-            start:s.toISOString(),
-            end:e?e.toISOString():null,
+            start:s,
+            end:e,
             allDay:false,
             calendarKey:cal.key,
             description:it.description||''
@@ -318,9 +331,9 @@ const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
         evEl.className='event '+(ev.allDay?'allDay':'');
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
-        const timeText=ev.allDay?'':fmtTime(ev.start);
+        const timeText=ev.allDay?'':pad(ev.start.getHours())+':'+pad(ev.start.getMinutes());
         evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${escapeHtml(ev.title)}</div>`;
-        evEl.onclick=()=>openModal(ev,calMeta);
+        evEl.onclick=()=>openModal(ev);
         eventsContainer.appendChild(evEl);
       }
 
@@ -335,21 +348,43 @@ const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
   }catch(err){
     console.error('Erreur chargement events:',err);
   }
-})();
+}
 
-function openModal(ev,calMeta){
+// modal
+function openModal(ev){
   document.getElementById('modal-title').textContent=ev.title;
-  document.getElementById('modal-time').textContent=ev.allDay?'Toute la journée':(ev.start?fmtTime(ev.start)+' à '+(ev.end?fmtTime(ev.end):''): '');
-  document.getElementById('modal-calendar').textContent=calMeta?calMeta.label:'';
+  document.getElementById('modal-start').textContent='Début : '+(ev.start?fmtTime(ev.start):'Toute la journée');
+  document.getElementById('modal-end').textContent='Fin : '+(ev.end?fmtTime(ev.end):'Toute la journée');
   document.getElementById('modal-desc').textContent=ev.description||'';
   document.getElementById('modal-overlay').style.display='block';
   document.getElementById('event-modal').style.display='block';
 }
-
 function closeModal(){
   document.getElementById('modal-overlay').style.display='none';
   document.getElementById('event-modal').style.display='none';
 }
+
+// navigation semaines
+document.getElementById('prev-week').onclick = () => {
+  const prev = new Date(gridStart);
+  prev.setDate(prev.getDate()-7);
+  renderCalendar(prev);
+};
+document.getElementById('next-week').onclick = () => {
+  const next = new Date(gridStart);
+  next.setDate(next.getDate()+7);
+  renderCalendar(next);
+};
+
+// initial render
+const today=new Date();
+const day=today.getDay();
+const mondayThisWeek=new Date(today);
+mondayThisWeek.setDate(today.getDate()-((day+6)%7));
+const mondayLastWeek=new Date(mondayThisWeek);
+mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
+renderCalendar(mondayLastWeek);
+
 </script>
 </body>
 </html>
