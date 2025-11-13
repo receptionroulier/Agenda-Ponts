@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - responsive</title>
+<title>Calendrier 4 semaines - responsive et jour inversé</title>
 
 <style>
 :root{
@@ -65,16 +65,16 @@ header h1{
 .day {
   background: #141619;
   border-radius:12px;
-  min-height: calc((100vh - 200px) / 4);
+  min-height:150px;
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
-  transition: transform 0.3s, background 0.3s, color 0.3s;
+  transition: transform 0.3s, background 0.3s, color 0.3s, z-index 0.3s;
   position:relative;
 }
 .day.today {
-  transform: scale(1.08);
+  transform: scale(1.1);
   z-index:2;
   background-color: #1f2226;
   box-shadow: 0 0 20px rgba(0,229,255,0.3);
@@ -90,13 +90,18 @@ header h1{
 }
 .day-header{
   display:flex;
-  justify-content:space-between;
+  flex-direction:column;
   align-items:center;
   font-size:var(--days-font);
   margin-bottom:6px;
 }
-.day .date {
+.day .dow {
   font-weight:600;
+  font-size:14px;
+  margin-bottom:4px;
+}
+.day .date {
+  font-weight:500;
   font-size:14px;
 }
 .events {
@@ -146,6 +151,7 @@ header h1{
   display:none;
   max-width:90%;
   min-width:300px;
+  white-space:pre-line;
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; white-space:nowrap; }
@@ -195,7 +201,7 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function fmtFull(dt){if(!dt)return''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})+' à '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtPopupDate(dt){if(!dt) return ''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric'})+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s; }
 
 // Variables de navigation
@@ -219,7 +225,7 @@ function showPopup(title,start,end,allDay=false){
   if(allDay){
     txt='Toute la journée';
   }else{
-    txt='Du: '+fmtFull(start)+'\nAu: '+(end?fmtFull(end):fmtFull(start));
+    txt='Du '+fmtPopupDate(start)+' au '+fmtPopupDate(end||start);
   }
   document.getElementById('popup-time').textContent=txt;
   popup.style.display='block';
@@ -259,7 +265,7 @@ async function renderCalendar(){
     const dayEl=document.createElement('div');
     dayEl.className='day';
     dayEl.dataset.date=fmtDate(d);
-    dayEl.innerHTML=`<div class="day-header"><div class="date">${d.getDate()}</div><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div></div><div class="events"></div>`;
+    dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
     gridEl.appendChild(dayEl);
   });
 
