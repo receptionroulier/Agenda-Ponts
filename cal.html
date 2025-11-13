@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Calendrier HAROPA</title>
 
-  <!-- FullCalendar -->
+  <!-- ✅ FullCalendar complet (inclut déjà tous les plugins utiles) -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
 
   <style>
     body {
@@ -19,20 +18,21 @@
       padding: 0;
     }
     #calendar {
-      max-width: 1200px;
-      margin: 20px auto;
+      max-width: 1100px;
+      margin: 30px auto;
       background: #1a1a1a;
-      padding: 15px;
+      padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
     .fc-event-title {
-      font-size: 0.8em; /* texte ajusté à la case */
+      font-size: 0.8em;
       white-space: normal;
     }
     .fc-header-toolbar h2 {
       color: #00e5ff;
       font-size: 1.3em;
+      text-transform: capitalize;
     }
   </style>
 </head>
@@ -43,29 +43,27 @@
     document.addEventListener('DOMContentLoaded', function() {
       const calendarEl = document.getElementById('calendar');
 
-      // Définir les bornes : semaine passée -> +2 semaines
+      // Calcul de la période visible : semaine passée → 2 semaines à venir
       const now = new Date();
-      const day = now.getDay(); // 0=dimanche, 1=lundi
+      const day = now.getDay();
       const mondayThisWeek = new Date(now);
-      mondayThisWeek.setDate(now.getDate() - ((day + 6) % 7)); // lundi de la semaine actuelle
+      mondayThisWeek.setDate(now.getDate() - ((day + 6) % 7)); // lundi courant
       const mondayLastWeek = new Date(mondayThisWeek);
-      mondayLastWeek.setDate(mondayLastWeek.getDate() - 7); // lundi de la semaine passée
+      mondayLastWeek.setDate(mondayLastWeek.getDate() - 7);
       const mondayNextTwo = new Date(mondayThisWeek);
-      mondayNextTwo.setDate(mondayNextTwo.getDate() + 21); // 2 semaines après
+      mondayNextTwo.setDate(mondayNextTwo.getDate() + 21);
 
       const calendar = new FullCalendar.Calendar(calendarEl, {
-        plugins: [ FullCalendar.GoogleCalendar ],
         initialView: 'timeGridWeek',
         locale: 'fr',
-        firstDay: 1, // lundi
+        firstDay: 1,
         height: 'auto',
         googleCalendarApiKey: 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo',
         events: {
           googleCalendarId: 'receptionroulier@gmail.com'
         },
-        visibleRange: {
-          start: mondayLastWeek,
-          end: mondayNextTwo
+        visibleRange: function() {
+          return { start: mondayLastWeek, end: mondayNextTwo };
         },
         headerToolbar: {
           left: '',
@@ -74,7 +72,7 @@
         },
         titleFormat: { month: 'long', year: 'numeric' },
         dayHeaderFormat: { weekday: 'long' },
-        nowIndicator: true,
+        nowIndicator: true
       });
 
       calendar.render();
@@ -82,5 +80,3 @@
   </script>
 </body>
 </html>
-
-
