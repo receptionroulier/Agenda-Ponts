@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendrier FullCalendar</title>
+<title>Calendrier HAROPA</title>
 
 <!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 
 <style>
 body {
@@ -15,102 +15,75 @@ body {
   background: #121212;
   color: #fff;
 }
-h1 {
-  text-align: center;
-  color: #00e5ff;
-  margin: 10px 0;
-}
 
-/* Wrapper calendrier */
-#calendar-wrapper {
+#calendar {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 12px;
+  margin: 20px auto;
   background: #1a1a1a;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* Ajustement FullCalendar sombre */
-#calendar-wrapper .fc {
-  background: #1a1a1a;
-  color: #fff;
-}
-#calendar-wrapper .fc-col-header-cell-cushion {
+.fc-toolbar-title {
+  font-size: 1.4em;
   color: #00e5ff;
 }
-#calendar-wrapper .fc-event {
-  color: #fff;
-  font-size: 0.85em;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-/* Événements passés en gris clair et semi-transparents */
-.fc-event.past-event {
-  background-color: #555 !important;
-  opacity: 0.5;
-  color: #ccc !important;
+.fc .fc-event {
+  font-size: 0.8em; /* ajuste la police dans les cases */
 }
 </style>
 </head>
 <body>
 
-<h1 id="calendar-month">Mois</h1>
-<div id="calendar-wrapper"></div>
+<div id="calendar"></div>
 
 <!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<!-- Google Calendar plugin -->
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const calendarEl = document.getElementById('calendar-wrapper');
+  const calendarEl = document.getElementById('calendar');
 
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = dimanche, 1 = lundi ...
-
-  // Début : lundi semaine passée
-  const start = new Date(now);
-  start.setDate(now.getDate() - dayOfWeek - 6);
-  if (start.getDay() !== 1) start.setDate(start.getDate() + 1);
-
-  // Fin : dimanche + 2 semaines
-  const end = new Date(now);
-  end.setDate(now.getDate() + (14 - dayOfWeek));
+  // Calcul des dates à afficher : semaine passée -> 2 semaines suivantes
+  const today = new Date();
+  const firstDayOfWeek = new Date(today);
+  firstDayOfWeek.setDate(today.getDate() - today.getDay() + 1 - 7); // lundi semaine passée
+  const lastDay = new Date(firstDayOfWeek);
+  lastDay.setDate(firstDayOfWeek.getDate() + 28); // 4 semaines
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
+    plugins: [ FullCalendar.googleCalendarPlugin ],
     initialView: 'timeGridWeek',
-    locale: 'fr',
-    firstDay: 1,
-    nowIndicator: true,
-    headerToolbar: false,
-    googleCalendarApiKey: 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo',
+    firstDay: 1, // lundi
+    slotMinTime: '06:00:00',
+    slotMaxTime: '22:00:00',
+    allDaySlot: false,
+    initialDate: today,
+    visibleRange: {
+      start: firstDayOfWeek,
+      end: lastDay
+    },
+    googleCalendarApiKey: 'TA_CLE_API_ICI', // <-- remplace par ta clé
     events: {
       googleCalendarId: 'receptionroulier@gmail.com'
     },
-    visibleRange: { start: start, end: end },
-    eventColor: '#0b8043',
-    height: 'auto',
-    expandRows: true,
-    eventDidMount: function(info) {
-      // Ajouter classe past-event si l'événement est passé
-      const today = new Date();
-      const eventEnd = new Date(info.event.end);
-      if (eventEnd < today) {
-        info.el.classList.add('past-event');
-      }
-    }
+    headerToolbar: {
+      left: '',
+      center: 'title',
+      right: ''
+    },
+    locale: 'fr',
+    height: 'auto'
   });
-
-  // Affichage mois courant dans le titre
-  const mois = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  document.getElementById("calendar-month").textContent = mois[now.getMonth()] + " " + now.getFullYear();
 
   calendar.render();
 });
 </script>
-
 </body>
 </html>
+
 
