@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - personnalisé</title>
+<title>Calendrier 4 semaines - responsive</title>
 
 <style>
 :root{
@@ -33,6 +33,7 @@ header{
   display:flex;
   justify-content:center;
   align-items:center;
+  flex-wrap:wrap;
   margin-bottom:10px;
   gap:20px;
 }
@@ -47,6 +48,7 @@ header h1{
   margin:0;
   font-size:24px;
   color:var(--accent);
+  white-space:nowrap;
 }
 .calendar {
   background: var(--card);
@@ -147,6 +149,18 @@ header h1{
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; white-space:nowrap; }
+
+/* --- RESPONSIVE --- */
+@media(max-width:1200px){
+  .grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media(max-width:900px){
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media(max-width:520px){
+  .grid { grid-template-columns: 1fr; }
+  .day { min-height:120px; }
+}
 </style>
 </head>
 <body>
@@ -182,7 +196,7 @@ function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtFull(dt){if(!dt)return''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})+' à '+pad(d.getHours())+':'+pad(d.getMinutes());}
-function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
+function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s; }
 
 // Variables de navigation
 let gridStartDate;
