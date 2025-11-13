@@ -11,12 +11,13 @@ body {
   font-family: Arial, sans-serif;
   background: #101010;
   color: #eaeaea;
+  height: 100vh;
 }
 
 .container {
   display: flex;
   flex-wrap: nowrap;
-  height: 100vh;
+  height: 100%;
 }
 
 /* === Colonne de gauche (ponts) === */
@@ -87,7 +88,7 @@ h2 {
   animation: clignoter-fade 1s infinite;
 }
 
-/* Clignotement en fondu pour texte et pastille des manœuvres */
+/* Clignotement en fondu */
 @keyframes clignoter-fade {
   0%,100% { opacity: 1; }
   50% { opacity: 0.3; }
@@ -97,7 +98,6 @@ h2 {
   animation: clignoter-fade 1s infinite;
 }
 
-/* Texte */
 .pont-nom { font-weight: bold; margin-bottom: 2px; display: flex; align-items: center; }
 .pont-etat { margin-bottom: 2px; }
 .pont-infos { color: #bbb; }
@@ -110,6 +110,7 @@ h2 {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .calendar-wrapper {
@@ -119,15 +120,36 @@ h2 {
   box-shadow: 0 0 10px rgba(0,0,0,0.6);
   flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.calendar-nav button {
+  background: none;
+  border: none;
+  color: #00e5ff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.calendar-nav button:hover {
+  color: #ffffff;
+}
+
 .calendar-wrapper iframe {
   width: 100%;
-  height: calc(100vh - 80px);
+  flex: 1;
   border: 0;
   border-radius: 10px;
+  transition: transform 0.3s;
 }
 
 /* === Mobile === */
@@ -149,7 +171,11 @@ h2 {
 
   <div class="right">
     <div class="calendar-wrapper">
-       <iframe src="https://receptionroulier.github.io/Agenda-Ponts/cal.html" frameborder="0"></iframe>
+      <div class="calendar-nav">
+        <button id="prev-week">&lt;</button>
+        <button id="next-week">&gt;</button>
+      </div>
+      <iframe id="calendar-frame" src="https://receptionroulier.github.io/Agenda-Ponts/cal.html" frameborder="0"></iframe>
     </div>
   </div>
 </div>
@@ -167,7 +193,7 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 1000);
 
-// === Chargement des ponts HAROPA toutes les 5s avec tri et suppression doublons ===
+// === Chargement des ponts HAROPA toutes les 5s ===
 async function fetchPonts() {
   try {
     const url = encodeURIComponent('https://www.havre-port.com/map/getPonts');
@@ -177,7 +203,6 @@ async function fetchPonts() {
     const pontsJSON = JSON.parse(data.contents).data;
     let ponts = Object.values(pontsJSON);
 
-    // Supprimer doublons par nom
     const seen = new Set();
     ponts = ponts.filter(p => {
       if (seen.has(p.nom)) return false;
@@ -188,7 +213,6 @@ async function fetchPonts() {
     const fermes = ponts.filter(p => !p.statutText.toLowerCase().includes('ouvert') && !p.statutText.includes('(Manoeuvre en cours)'));
     const manoeuvre = ponts.filter(p => p.statutText.includes('(Manoeuvre en cours)'));
     const ouverts = ponts.filter(p => p.statutText.toLowerCase().includes('ouvert'));
-
     const triPonts = [...fermes, ...manoeuvre, ...ouverts];
 
     let html = '';
@@ -212,6 +236,15 @@ async function fetchPonts() {
     document.getElementById('ponts-table').innerHTML = 'Impossible de récupérer les ponts.';
   }
 }
+
+// Navigation du calendrier via iframe
+const frame = document.getElementById('calendar-frame');
+document.getElementById('prev-week').addEventListener('click', () => {
+  frame.contentWindow.postMessage({ action: 'prev-week' }, '*');
+});
+document.getElementById('next-week').addEventListener('click', () => {
+  frame.contentWindow.postMessage({ action: 'next-week' }, '*');
+});
 
 // Premier chargement
 fetchPonts();
