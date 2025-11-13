@@ -1,97 +1,372 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calendrier 4 semaines</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendrier 4 semaines - personnalisé</title>
 
-  <!-- FullCalendar -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1113;
+    --card:#141517;
+    --muted:#999;
+    --text:#eaeaea;
+    --accent:#00e5ff;
+    --gap:8px;
+    --days-font:13px;
+    --event-font:12px;
+  }
+  body{
+    margin:0;
+    font-family:Inter, system-ui, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:16px;
+    box-sizing:border-box;
+  }
 
-  <!-- Plugin ICS -->
-  <script src="https://cdn.jsdelivr.net/npm/ical.js@1.4.0/build/ical.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar-icalendar@1.0.1/index.global.min.js"></script>
+  .container{
+    max-width:1400px;
+    margin:0 auto;
+  }
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-    }
-    #calendar {
-      max-width: 1100px;
-      margin: 20px auto;
-      background: #1c1c1c;
-      padding: 20px;
-      border-radius: 12px;
-    }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    color:var(--accent);
+  }
+  .legend{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .legend .item{ display:flex; gap:6px; align-items:center; }
+  .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; }
 
-    /* Événements lisibles */
-    .fc-event-title {
-      font-size: 0.85rem;
-      white-space: normal;
-    }
+  /* Grid of 4 weeks: 7 columns x 4 rows */
+  .calendar {
+    background: var(--card);
+    border-radius:10px;
+    padding:12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  }
 
-    /* Titre centré et joli */
-    .fc-toolbar-title {
-      font-size: 1.6rem !important;
-      text-transform: capitalize;
-    }
-  </style>
+  .grid {
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--gap);
+  }
+
+  .day {
+    background: #0f1315;
+    border-radius:8px;
+    min-height:90px;
+    padding:8px;
+    box-sizing:border-box;
+    border:1px solid rgba(255,255,255,0.02);
+    overflow:hidden;
+  }
+
+  .day-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:var(--days-font);
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  .day .date {
+    font-weight:600;
+    color:var(--text);
+    font-size:13px;
+  }
+
+  /* Compact events list inside cell */
+  .events {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    overflow:hidden;
+    max-height: calc( (100vh - 220px) / 4 ); /* approximate per-row limit */
+  }
+
+  .event {
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    padding:6px;
+    border-radius:6px;
+    font-size:var(--event-font);
+    line-height:1.05;
+    color:#fff;
+    overflow:hidden;
+  }
+  .event .time {
+    min-width:44px;
+    font-weight:600;
+    color:rgba(255,255,255,0.9);
+    font-size:11px;
+  }
+  .event .title {
+    flex:1;
+    color:#fff;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .event.allDay .time { color: #ffd479; font-weight:700; } /* special */
+  .event.more {
+    font-size:12px;
+    color:var(--muted);
+    padding-left:6px;
+  }
+
+  /* Colors per calendar (map below in JS) */
+  .c-reception { background: linear-gradient(90deg,#2b6cff,#1c3cff); }
+  .c-smr { background: linear-gradient(90deg,#0bbd7a,#0b8043); }
+
+  /* Responsive: on narrow screens show 2 columns */
+  @media(max-width:900px){
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    header{ flex-direction:column; align-items:flex-start; gap:8px; }
+  }
+  @media(max-width:520px){
+    .grid { grid-template-columns: repeat(1, 1fr); }
+  }
+</style>
 </head>
 <body>
+  <div class="container">
+    <header>
+      <h1 id="month-title">Mois</h1>
+      <div class="legend" id="legend"></div>
+    </header>
 
-  <div id="calendar"></div>
+    <div class="calendar" id="calendar-root">
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const calendarEl = document.getElementById('calendar');
+<script>
+/*
+  cal.html - custom 4-weeks calendar UI (full width, compact)
+  - Fetches events from Google Calendar API for given calendar IDs (public or accessible)
+  - Shows monday of last week -> +3 weeks (4 weeks total)
+  - Deduplicates events by iCalUID or id
+  - Color per calendar id
+  - Shows "HH:MM Title" or "Jour entier Title"
+*/
 
-      // Date de départ = lundi de la semaine précédente
-      const today = new Date();
-      const day = today.getDay(); // 0 = dimanche
-      const mondayThisWeek = new Date(today);
-      mondayThisWeek.setDate(today.getDate() - ((day + 6) % 7));
+// --- CONFIG ---------------------------------------------------------
+const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo'; // ta clé (remplace si besoin)
+const CALENDARS = [
+  { id: 'receptionroulier@gmail.com', key: 'reception', label: 'Réception', css: 'c-reception' },
+  { id: 'smr.programme@gmail.com', key: 'smr', label: 'SMR Programme', css: 'c-smr' }
+];
+// nombre de semaines visible (4)
+const WEEKS = 4;
 
-      const mondayLastWeek = new Date(mondayThisWeek);
-      mondayLastWeek.setDate(mondayThisWeek.getDate() - 7);
+// helper formatting
+function fmtDate(d){
+  return d.toISOString().split('T')[0];
+}
+function pad(n){ return n<10 ? '0'+n : '';}
+function fmtTime(dt){
+  if(!dt) return '';
+  const d = new Date(dt);
+  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function shortTitle(s, max=60){ if(!s) return ''; return s.length>max? s.slice(0,max-1)+'…': s; }
 
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'fourWeek',
-        locale: 'fr',
-        firstDay: 1, // Lundi
-        height: "auto",
+// compute monday of current week, monday previous week, and date list
+const today = new Date();
+const day = today.getDay(); // 0 sunday
+const mondayThisWeek = new Date(today);
+mondayThisWeek.setDate(today.getDate() - ((day + 6) % 7)); // monday
+const mondayLastWeek = new Date(mondayThisWeek);
+mondayLastWeek.setDate(mondayLastWeek.getDate() - 7);
+const gridStart = mondayLastWeek; // start
+// array of dates for 4 weeks
+const dates = [];
+for(let w=0; w<WEEKS; w++){
+  for(let i=0;i<7;i++){
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + w*7 + i);
+    dates.push(new Date(d));
+  }
+}
 
-        views: {
-          fourWeek: {
-            type: 'dayGrid',
-            duration: { weeks: 4 },  // 4 semaines visibles
-            buttonText: '4 semaines'
+// set title to current month
+const monthNames = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+document.getElementById('month-title').textContent = monthNames[today.getMonth()] + ' ' + today.getFullYear();
+
+// build grid HTML placeholders
+const gridEl = document.getElementById('grid');
+gridEl.innerHTML = '';
+dates.forEach(d=>{
+  const dayEl = document.createElement('div');
+  dayEl.className = 'day';
+  dayEl.dataset.date = fmtDate(d);
+  dayEl.innerHTML = `
+    <div class="day-header">
+      <div class="date">${d.getDate()} ${(d.getMonth()+1)}/${d.getFullYear()}</div>
+      <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
+    </div>
+    <div class="events"></div>
+  `;
+  gridEl.appendChild(dayEl);
+});
+
+// legend
+const legendEl = document.getElementById('legend');
+legendEl.innerHTML = CALENDARS.map(c=>`<div class="item"><span class="dot ${c.css}" style="width:12px;height:12px"></span>${c.label}</div>`).join('');
+
+// fetch events from Google Calendar API for each calendar
+async function fetchEventsForCalendar(calId, timeMin, timeMax){
+  const base = 'https://www.googleapis.com/calendar/v3/calendars/';
+  const url = base + encodeURIComponent(calId) + '/events'
+    + '?key=' + encodeURIComponent(API_KEY)
+    + '&timeMin=' + encodeURIComponent(timeMin)
+    + '&timeMax=' + encodeURIComponent(timeMax)
+    + '&singleEvents=true&orderBy=startTime&maxResults=2500';
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP '+res.status+' while loading '+calId);
+  return res.json();
+}
+
+// build time range
+const timeMin = new Date(dates[0]);
+timeMin.setHours(0,0,0,0);
+const timeMax = new Date(dates[dates.length-1]);
+timeMax.setHours(23,59,59,999);
+
+// main loader
+(async function loadAll(){
+  try{
+    // fetch all calendars in parallel
+    const promises = CALENDARS.map(c => fetchEventsForCalendar(c.id, timeMin.toISOString(), timeMax.toISOString())
+      .then(json => ({ calendar: c, items: json.items || [] }))
+      .catch(err => ({ calendar: c, error: err })));
+    const results = await Promise.all(promises);
+
+    // collect events, map by dedupe key (iCalUID or id)
+    const eventsByDay = {}; // 'YYYY-MM-DD' -> [events]
+    const seen = new Set();
+
+    for(const res of results){
+      if(res.error){
+        console.warn('Erreur API pour', res.calendar.id, res.error);
+        continue;
+      }
+      const cal = res.calendar;
+      for(const it of res.items){
+        const dedupeKey = it.iCalUID || it.id || (it.summary + it.start?.dateTime || it.start?.date);
+        if(seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        // determine start and end
+        let start = it.start?.dateTime || it.start?.date; // dateTime (ISO) or date (YYYY-MM-DD)
+        let end = it.end?.dateTime || it.end?.date;
+        const isAllDay = !!it.start?.date && !it.start?.dateTime;
+
+        if(isAllDay){
+          // treat all-day events as occurring on start date (may span multiple days)
+          const s = new Date(start + 'T00:00:00');
+          const e = new Date(end + 'T00:00:00');
+          // Google Calendar all-day events: end is exclusive; iterate days from s to e-1
+          for(let d = new Date(s); d < e; d.setDate(d.getDate()+1)){
+            const key = fmtDate(d);
+            eventsByDay[key] = eventsByDay[key] || [];
+            eventsByDay[key].push({
+              title: it.summary || '(sans titre)',
+              start: null,
+              allDay: true,
+              calendarKey: cal.key
+            });
           }
-        },
+        } else {
+          // timed event: could span multiple days; place on start date only (compact)
+          const s = new Date(start);
+          const e = end ? new Date(end) : null;
+          // If event spans multiple days, we will show it on each day where it starts (compact view)
+          const dayKey = fmtDate(s);
+          eventsByDay[dayKey] = eventsByDay[dayKey] || [];
+          eventsByDay[dayKey].push({
+            title: it.summary || '(sans titre)',
+            start: s.toISOString(),
+            end: e ? e.toISOString() : null,
+            allDay: false,
+            calendarKey: cal.key
+          });
+        }
+      }
+    }
 
-        // Ajuster le titre : toujours le mois actuel
-        titleFormat: { month: 'long' },
+    // render events into grid cells
+    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+      const date = dayEl.dataset.date;
+      const evList = eventsByDay[date] || [];
+      const eventsContainer = dayEl.querySelector('.events');
+      eventsContainer.innerHTML = '';
 
-        // Charger ton agenda ICS public Google
-        eventSources: [
-          {
-            url: "https://calendar.google.com/calendar/ical/receptionroulier%40gmail.com/public/basic.ics",
-            format: "ics"
-          },
-          {
-            url: "https://calendar.google.com/calendar/ical/smr.programme%40gmail.com/public/basic.ics",
-            format: "ics"
-          }
-        ],
-
-        initialDate: mondayLastWeek   // Affiche semaine passée → semaine actuelle → 2 suivantes
+      // sort: all-day first, then timed by start
+      evList.sort((a,b)=>{
+        if(a.allDay && !b.allDay) return -1;
+        if(!a.allDay && b.allDay) return 1;
+        if(a.allDay && b.allDay) return 0;
+        return new Date(a.start) - new Date(b.start);
       });
 
-      calendar.render();
-    });
-  </script>
+      // limit displayed events per cell (compact)
+      const MAX_PER_CELL = 6;
+      const show = evList.slice(0, MAX_PER_CELL);
+      for(const ev of show){
+        const evEl = document.createElement('div');
+        evEl.className = 'event ' + (ev.allDay ? 'allDay' : '');
+        // set color by calendarKey
+        const calMeta = CALENDARS.find(c=>c.key===ev.calendarKey);
+        const cssClass = calMeta ? calMeta.css : '';
+        if(cssClass) evEl.classList.add(cssClass);
 
+        const timeText = ev.allDay ? 'Jour' : (fmtTime(ev.start));
+        evEl.innerHTML = `<div class="time">${timeText}</div><div class="title">${escapeHtml(shortTitle(ev.title,80))}</div>`;
+        eventsContainer.appendChild(evEl);
+      }
+
+      if(evList.length > MAX_PER_CELL){
+        const moreEl = document.createElement('div');
+        moreEl.className = 'event more';
+        moreEl.textContent = `+ ${evList.length - MAX_PER_CELL} autres`;
+        eventsContainer.appendChild(moreEl);
+      }
+    }
+
+  }catch(err){
+    console.error('Erreur lors du chargement des événements :', err);
+    const grid = document.getElementById('grid');
+    grid.innerHTML = `<div style="padding:20px;color:var(--muted)">Erreur lors du chargement des événements. Voir console.</div>`;
+  }
+})();
+
+// small helper to escape HTML in titles
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(m){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+  });
+}
+</script>
 </body>
 </html>
+
