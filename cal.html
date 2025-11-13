@@ -29,12 +29,14 @@
         discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
         scope: 'https://www.googleapis.com/auth/calendar.readonly'
       }).then(function() {
+        console.log("API Google chargée avec succès.");
         return gapi.auth2.getAuthInstance().signIn();
       }).then(function() {
+        console.log("Authentification réussie.");
         loadCalendar();
       }).catch(function(error) {
-        console.error("Erreur d'initialisation ou d'authentification :", error);
-        alert("Erreur d'authentification. Voir la console pour plus de détails.");
+        console.error("Erreur détaillée :", error);
+        alert("Erreur d'authentification. Détails : " + JSON.stringify(error, null, 2));
       });
     }
 
@@ -48,7 +50,7 @@
         'maxResults': 20,
         'orderBy': 'startTime'
       }).then(function(response) {
-        console.log("Réponse de l'API :", response);
+        console.log("Événements récupérés :", response.result.items);
         if (response.result.items && response.result.items.length > 0) {
           const events = response.result.items.map(event => ({
             title: event.summary,
@@ -73,7 +75,7 @@
         }
       }).catch(function(error) {
         console.error("Erreur lors de la récupération des événements :", error);
-        alert("Erreur lors de la récupération des événements. Voir la console pour plus de détails.");
+        alert("Erreur lors de la récupération des événements. Détails : " + JSON.stringify(error, null, 2));
       });
     }
 
@@ -82,4 +84,5 @@
   </script>
 </body>
 </html>
+
 
