@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendrier FullCalendar Google</title>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
+
+<style>
+body { margin:0; font-family: Arial,sans-serif; background:#121212; color:#fff; }
+#calendar { max-width: 900px; margin:20px auto; background:#1a1a1a; border-radius:10px; padding:10px; }
+</style>
+</head>
+<body>
+
+<div id="calendar"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('calendar');
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'timeGridWeek',
+    plugins: [ FullCalendar.googleCalendarPlugin ],
+    events: {
+      googleCalendarId: 'receptionroulier@gmail.com',
+    },
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'timeGridWeek,timeGridDay'
+    },
+    firstDay: 1,
+    nowIndicator: true,
+    height: 'auto',
+    weekNumbers: true,
+    eventColor: '#3f51b5',
+    eventTextColor: '#fff'
+  });
+
+  calendar.render();
+});
+</script>
+
+</body>
+</html>
