@@ -4,23 +4,25 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Calendrier 4 semaines - personnalisé</title>
+
 <style>
 :root{
   --bg:#1a1a1a;
-  --card:#2a2a2a;
-  --muted:#666;
+  --card:#252525;
+  --muted:#888;
   --text:#eaeaea;
   --accent:#00e5ff;
-  --gap:4px;
-  --days-font:14px;
-  --event-font:13px;
+  --gap:6px;
+  --days-font:13px;
+  --event-font:12px;
+  --day-height:120px;
 }
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
-  padding:10px;
+  padding:16px;
   box-sizing:border-box;
 }
 .container{
@@ -29,220 +31,288 @@ body{
 }
 header{
   display:flex;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
   margin-bottom:10px;
 }
 header h1{
   margin:0;
-  font-size:24px;
+  font-size:22px;
   color:var(--accent);
 }
 .calendar {
-  background: var(--card);
-  border-radius:12px;
-  padding:8px;
+  display:flex;
+  justify-content:center;
+}
+.grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
   width:100%;
-  height: calc(100vh - 80px);
 }
 .day {
-  border:1px solid rgba(255,255,255,0.1);
+  background: var(--card);
   border-radius:10px;
-  min-height: calc((100vh - 100px)/4);
+  min-height: var(--day-height);
   padding:6px;
   box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-start;
+  border:1px solid #444;
   overflow:hidden;
-  transition: transform 0.2s;
+  position:relative;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
-.day.past{
-  background:#151515;
-  color:#555;
-  transform: scale(0.95);
-}
-.day.current{
-  background:#242424;
-  transform: scale(1.03);
-}
-.day .day-header{
+.day.past { background:#1c1c1c; color:#666; }
+.day.future { background:#2a2a2a; }
+.day.today { background:#2e2e3a; transform:scale(1.05); z-index:1; }
+
+.day-header{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   font-size:var(--days-font);
-  margin-bottom:4px;
+  margin-bottom:6px;
 }
-.day .day-header .date { font-weight:600; }
-.events { display:flex; flex-direction:column; gap:4px; overflow:hidden; flex:1; }
+.day .date { font-weight:600; }
+.day .dow { font-size:12px; color:var(--muted); }
+.events { display:flex; flex-direction:column; gap:4px; overflow:hidden; max-height: calc(var(--day-height) - 28px); }
+
 .event {
-  display:flex; gap:4px; align-items:flex-start;
+  display:flex;
+  gap:6px;
+  align-items:flex-start;
+  padding:4px 6px;
+  border-radius:6px;
   font-size:var(--event-font);
-  line-height:1.1;
-  color:#ccc;
+  line-height:1.05;
+  color:#fff;
+  cursor:pointer;
+  overflow:hidden;
+}
+.event .time { min-width:44px; font-weight:600; font-size:11px; }
+.event .title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.event.allDay .time { font-weight:700; color:#ffd479; }
+
+.c-reception { background:#109c53; }
+.c-smr { background:#5768cb; }
+
+.popup {
+  position:absolute;
+  background:#252525;
+  border:1px solid #444;
+  border-radius:10px;
+  padding:12px;
+  min-width:200px;
+  max-width:300px;
+  z-index:10;
+  display:none;
+  color:#fff;
+}
+.popup .title { font-weight:bold; margin-bottom:6px; }
+.popup .time { font-size:12px; margin-bottom:4px; }
+
+.nav {
+  display:flex;
+  justify-content:space-between;
+  width:100%;
+  margin-bottom:6px;
+}
+.nav button{
+  background:var(--card);
+  border:1px solid #444;
+  color:var(--text);
+  padding:4px 8px;
+  border-radius:6px;
   cursor:pointer;
 }
-.event .time{ min-width:44px; font-weight:600; font-size:11px; }
-.event.allDay .time{ color:#ffd479; font-weight:700; }
-.c-reception{ color:#109c53; }
-.c-smr{ color:#5768cb; }
-#popup{
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#2a2a2a; color:#fff; padding:18px; border-radius:12px;
-  display:none; z-index:9999; width:280px; box-shadow:0 4px 20px rgba(0,0,0,0.6);
-}
-#popup-close{ position:absolute; top:6px; right:10px; cursor:pointer; font-weight:bold; }
-#popup-title{ font-weight:bold; margin-bottom:8px; }
-#popup-time{ font-size:13px; color:#ccc; }
+.nav button:hover{ background:#333; }
 </style>
 </head>
 <body>
 <div class="container">
-  <header><h1 id="month-title">Mois</h1></header>
-  <div class="calendar" id="calendar-root"></div>
-</div>
-
-<div id="popup">
-  <div id="popup-close" onclick="document.getElementById('popup').style.display='none'">×</div>
-  <div id="popup-title"></div>
-  <div id="popup-time"></div>
+  <header>
+    <h1 id="month-title">Mois</h1>
+  </header>
+  <div class="nav">
+    <button id="prev-week">&lt; Semaine précédente</button>
+    <button id="next-week">Semaine suivante &gt;</button>
+  </div>
+  <div class="calendar" id="calendar-root">
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="popup" id="popup"></div>
 </div>
 
 <script>
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
-  { id:'receptionroulier@gmail.com', key:'reception' },
-  { id:'smr.programme@gmail.com', key:'smr' }
+  { id: 'receptionroulier@gmail.com', key: 'reception', css: 'c-reception' },
+  { id: 'smr.programme@gmail.com', key: 'smr', css: 'c-smr' }
 ];
 const WEEKS = 4;
+
+let startMonday = new Date();
+startMonday.setDate(startMonday.getDate() - ((startMonday.getDay()+6)%7) - 7);
 
 function fmtDate(d){ return d.toISOString().split('T')[0]; }
 function pad(n){ return n<10?'0'+n:n; }
 function fmtTime(dt){ const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes()); }
-function shortTitle(s,max=60){ if(!s)return''; return s.length>max? s.slice(0,max-1)+'…':s; }
+function shortTitle(s,max=60){return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// compute grid dates
-const today=new Date();
-const day=today.getDay();
-const mondayThisWeek=new Date(today); mondayThisWeek.setDate(today.getDate()-((day+6)%7));
-const mondayLastWeek=new Date(mondayThisWeek); mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
-const gridStart = mondayLastWeek;
-const dates=[];
-for(let w=0; w<WEEKS; w++){
-  for(let i=0;i<7;i++){
-    const d=new Date(gridStart);
-    d.setDate(gridStart.getDate()+w*7+i);
-    dates.push(new Date(d));
+function buildGrid(){
+  const dates=[];
+  for(let w=0; w<WEEKS; w++){
+    for(let i=0;i<7;i++){
+      const d = new Date(startMonday);
+      d.setDate(startMonday.getDate() + w*7 + i);
+      dates.push(new Date(d));
+    }
   }
-}
-document.getElementById('month-title').textContent= today.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
-
-const gridEl=document.getElementById('calendar-root');
-dates.forEach(d=>{
-  const dayEl=document.createElement('div');
-  dayEl.className='day';
-  if(d<today.setHours(0,0,0,0)) dayEl.classList.add('past');
-  else if(d.toDateString()===new Date().toDateString()) dayEl.classList.add('current');
-  dayEl.dataset.date=fmtDate(d);
-  dayEl.innerHTML=`<div class="day-header"><div class="date">${d.getDate()}</div><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div></div><div class="events"></div>`;
-  gridEl.appendChild(dayEl);
-});
-
-// popup function
-function showPopup(title,startISO,endISO,allDay){
-  const popup=document.getElementById('popup');
-  document.getElementById('popup-title').textContent=title;
-  let text='';
-  if(allDay){
-    text='Toute la journée';
-  }else{
-    const start=new Date(startISO);
-    const end=new Date(endISO);
-    const options={weekday:'short',day:'2-digit',month:'short',year:'numeric'};
-    text=`Du: ${start.toLocaleDateString('fr-FR',options)} à ${pad(start.getHours())}:${pad(start.getMinutes())} Au: ${end.toLocaleDateString('fr-FR',options)} à ${pad(end.getHours())}:${pad(end.getMinutes())}`;
-  }
-  document.getElementById('popup-time').textContent=text;
-  popup.style.display='block';
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML='';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  dates.forEach(d=>{
+    const dayEl = document.createElement('div');
+    dayEl.className='day';
+    if(d < today) dayEl.classList.add('past');
+    else if(d > today) dayEl.classList.add('future');
+    else dayEl.classList.add('today');
+    dayEl.dataset.date=fmtDate(d);
+    dayEl.innerHTML=`
+      <div class="day-header">
+        <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
+        <div class="date">${d.getDate()}</div>
+      </div>
+      <div class="events"></div>
+    `;
+    gridEl.appendChild(dayEl);
+  });
 }
 
-// fetch events
-async function fetchEventsForCalendar(calId,timeMin,timeMax){
-  const url='https://www.googleapis.com/calendar/v3/calendars/'+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+async function fetchEventsForCalendar(calId, timeMin, timeMax){
+  const base='https://www.googleapis.com/calendar/v3/calendars/';
+  const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)
+    +'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)
+    +'&singleEvents=true&orderBy=startTime&maxResults=2500';
   const res=await fetch(url);
   if(!res.ok) throw new Error('HTTP '+res.status);
   return res.json();
 }
 
-const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
-const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
-
-(async function loadAll(){
+async function loadEvents(){
+  const gridDays=document.querySelectorAll('.day');
+  const timeMin=new Date(startMonday); timeMin.setHours(0,0,0,0);
+  const timeMax=new Date(startMonday); timeMax.setDate(timeMax.getDate()+WEEKS*7-1); timeMax.setHours(23,59,59,999);
   try{
-    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString()).then(json=>({calendar:c,items:json.items||[]}).catch(err=>({calendar:c,error:err}))));
+    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id, timeMin.toISOString(), timeMax.toISOString())
+      .then(json=>({calendar:c, items:json.items||[]}))
+      .catch(err=>({calendar:c,error:err})));
     const results=await Promise.all(promises);
 
-    const eventsByDay={}; 
+    const eventsByDay={};
     const seen=new Set();
     for(const res of results){
-      if(res.error){ console.warn('Erreur API pour',res.calendar.id,res.error); continue; }
-      const cal=res.calendar;
+      if(res.error){ console.warn('Erreur API',res.calendar.id,res.error); continue; }
       for(const it of res.items){
-        const dedupeKey=it.iCalUID||it.id||(it.summary+(it.start?.dateTime||it.start?.date));
-        if(seen.has(dedupeKey)) continue;
-        seen.add(dedupeKey);
-        let start=it.start?.dateTime||it.start?.date;
-        let end=it.end?.dateTime||it.end?.date;
-        const isAllDay=!!it.start?.date&&!it.start?.dateTime;
-        if(isAllDay){
+        const key = it.iCalUID || it.id || (it.summary+(it.start?.dateTime||it.start?.date));
+        if(seen.has(key)) continue;
+        seen.add(key);
+        const start=it.start?.dateTime||it.start?.date;
+        const end=it.end?.dateTime||it.end?.date;
+        const allDay=!!it.start?.date && !it.start?.dateTime;
+        if(allDay){
           const s=new Date(start+'T00:00:00');
           const e=new Date(end+'T00:00:00');
           for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
-            const key=fmtDate(d);
-            eventsByDay[key]=eventsByDay[key]||[];
-            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:cal.key});
+            const k=fmtDate(d);
+            eventsByDay[k]=eventsByDay[k]||[];
+            eventsByDay[k].push({title:it.summary,start:null,allDay:true,calendarKey:res.calendar.key,end:end});
           }
         } else {
-          const s=new Date(start); const e=end?new Date(end):null;
-          const dayKey=fmtDate(s);
-          eventsByDay[dayKey]=eventsByDay[dayKey]||[];
-          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:cal.key});
+          const s=new Date(start);
+          const k=fmtDate(s);
+          eventsByDay[k]=eventsByDay[k]||[];
+          eventsByDay[k].push({title:it.summary,start:start,allDay:false,calendarKey:res.calendar.key,end:end});
         }
       }
     }
 
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    for(const dayEl of gridDays){
       const date=dayEl.dataset.date;
       const evList=eventsByDay[date]||[];
-      const eventsContainer=dayEl.querySelector('.events');
-      eventsContainer.innerHTML='';
-      evList.sort((a,b)=>{if(a.allDay&&!b.allDay)return -1;if(!a.allDay&&b.allDay)return 1;if(a.allDay&&b.allDay)return 0; return new Date(a.start)-new Date(b.start);});
-      const MAX_PER_CELL=6;
-      const show=evList.slice(0,MAX_PER_CELL);
-      for(const ev of show){
+      const evContainer=dayEl.querySelector('.events');
+      evContainer.innerHTML='';
+      evList.sort((a,b)=>{
+        if(a.allDay && !b.allDay) return -1;
+        if(!a.allDay && b.allDay) return 1;
+        return a.start && b.start ? new Date(a.start)-new Date(b.start):0;
+      });
+      const MAX=6;
+      evList.slice(0,MAX).forEach(ev=>{
         const evEl=document.createElement('div');
         evEl.className='event '+(ev.allDay?'allDay':'');
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
-        const cssClass=calMeta?calMeta.css:'';
-        if(cssClass) evEl.classList.add(cssClass);
-        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-        evEl.onclick=()=>showPopup(ev.title,ev.start,ev.end,ev.allDay);
-        eventsContainer.appendChild(evEl);
-      }
-      if(evList.length>MAX_PER_CELL){
+        if(calMeta) evEl.classList.add(calMeta.css);
+        const timeText=ev.allDay?'':fmtTime(ev.start);
+        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${escapeHtml(shortTitle(ev.title,80))}</div>`;
+        evEl.onclick=e=>{
+          showPopup(e.currentTarget,ev);
+        };
+        evContainer.appendChild(evEl);
+      });
+      if(evList.length>MAX){
         const moreEl=document.createElement('div');
         moreEl.className='event more';
-        moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
-        eventsContainer.appendChild(moreEl);
+        moreEl.textContent=`+ ${evList.length-MAX} autres`;
+        evContainer.appendChild(moreEl);
       }
     }
+  }catch(err){ console.error('Erreur chargement events',err); }
+}
 
-  }catch(err){
-    console.error('Erreur lors du chargement des événements :',err);
-    document.getElementById('calendar-root').innerHTML=`<div style="padding:20px;color:var(--muted)">Erreur lors du chargement. Voir console.</div>`;
+// Popup
+const popup=document.getElementById('popup');
+function showPopup(target,event){
+  let html='';
+  if(event.allDay){
+    html+=`<div class="title">${escapeHtml(event.title)}</div>`;
+    html+=`<div class="time">(Toute la journée)</div>`;
+  } else {
+    const d1=new Date(event.start);
+    const d2=new Date(event.end||event.start);
+    const options={weekday:'long',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'};
+    html+=`<div class="title">${escapeHtml(event.title)}</div>`;
+    html+=`<div class="time">Du: ${d1.toLocaleDateString('fr-FR',options)}<br>Au: ${d2.toLocaleDateString('fr-FR',options)}</div>`;
   }
-})();
+  popup.innerHTML=html;
+  popup.style.display='block';
+  const rect=target.getBoundingClientRect();
+  popup.style.top=(rect.bottom+window.scrollY+4)+'px';
+  popup.style.left=(rect.left+window.scrollX)+'px';
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.event')) popup.style.display='none';
+});
+
+// Navigation
+document.getElementById('prev-week').onclick=()=>{
+  startMonday.setDate(startMonday.getDate()-7);
+  buildGrid();
+  loadEvents();
+};
+document.getElementById('next-week').onclick=()=>{
+  startMonday.setDate(startMonday.getDate()+7);
+  buildGrid();
+  loadEvents();
+};
+
+// Init
+buildGrid();
+loadEvents();
 </script>
 </body>
 </html>
+
