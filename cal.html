@@ -63,7 +63,7 @@ header h1{
 .day {
   background: #141619;
   border-radius:12px;
-  min-height:150px;
+  min-height: calc((100vh - 200px) / 4);
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
@@ -72,7 +72,7 @@ header h1{
   position:relative;
 }
 .day.today {
-  transform: scale(1.1);
+  transform: scale(1.08);
   z-index:2;
   background-color: #1f2226;
   box-shadow: 0 0 20px rgba(0,229,255,0.3);
@@ -80,7 +80,7 @@ header h1{
 .day.past {
   background-color: #0f1113;
   color:#555;
-  transform: scale(0.95);
+  transform: scale(0.97);
 }
 .day.future {
   background-color: #1c1f23;
@@ -102,7 +102,7 @@ header h1{
   flex-direction:column;
   gap:4px;
   overflow:hidden;
-  max-height: calc( (100vh - 200px) / 4 );
+  max-height: calc( (100vh - 220px) / 4 );
 }
 .event {
   display:flex;
@@ -146,7 +146,7 @@ header h1{
   min-width:300px;
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
-#popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
+#popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -181,6 +181,7 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtFull(dt){if(!dt)return''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'})+' à '+pad(d.getHours())+':'+pad(d.getMinutes());}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
 // Variables de navigation
@@ -197,10 +198,16 @@ function computeGridStart(referenceDate){
 gridStartDate = computeGridStart(new Date());
 
 // popup
-function showPopup(title,start,end){
+function showPopup(title,start,end,allDay=false){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  document.getElementById('popup-time').textContent='Début : '+start+'\nFin : '+end;
+  let txt='';
+  if(allDay){
+    txt='Toute la journée';
+  }else{
+    txt='Du: '+fmtFull(start)+'\nAu: '+(end?fmtFull(end):fmtFull(start));
+  }
+  document.getElementById('popup-time').textContent=txt;
   popup.style.display='block';
 }
 
@@ -304,7 +311,7 @@ async function renderCalendar(){
 
         const timeText=ev.allDay?'':fmtTime(ev.start);
         evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-        evEl.onclick=()=>showPopup(ev.title,timeText,ev.end?fmtTime(ev.end):timeText);
+        evEl.onclick=()=>showPopup(ev.title,ev.start,ev.end,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
 
@@ -316,7 +323,6 @@ async function renderCalendar(){
       }
     }
 
-    // style past/future/today
     const todayStr=fmtDate(new Date());
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
@@ -346,3 +352,4 @@ renderCalendar();
 </script>
 </body>
 </html>
+
