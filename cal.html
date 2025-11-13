@@ -6,33 +6,28 @@
 <title>Calendrier HAROPA</title>
 
 <!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #121212;
-  color: #fff;
-}
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #fff;
+  }
+  #calendar {
+    max-width: 1000px;
+    margin: 20px auto;
+    background: #1a1a1a;
+    border-radius: 10px;
+    padding: 10px;
+  }
 
-#calendar {
-  max-width: 1200px;
-  margin: 20px auto;
-  background: #1a1a1a;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.fc-toolbar-title {
-  font-size: 1.4em;
-  color: #00e5ff;
-}
-
-.fc .fc-event {
-  font-size: 0.8em; /* ajuste la police dans les cases */
-}
+  /* Ajustement police des événements */
+  .fc-event-title {
+    font-size: 0.85em;
+    white-space: normal;
+  }
 </style>
 </head>
 <body>
@@ -41,33 +36,24 @@ body {
 
 <!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-<!-- Google Calendar plugin -->
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const calendarEl = document.getElementById('calendar');
 
-  // Calcul des dates à afficher : semaine passée -> 2 semaines suivantes
+  // Calcul des dates pour afficher semaine passée → 2 semaines suivantes
   const today = new Date();
   const firstDayOfWeek = new Date(today);
   firstDayOfWeek.setDate(today.getDate() - today.getDay() + 1 - 7); // lundi semaine passée
   const lastDay = new Date(firstDayOfWeek);
-  lastDay.setDate(firstDayOfWeek.getDate() + 28); // 4 semaines
+  lastDay.setDate(firstDayOfWeek.getDate() + 27); // 4 semaines en tout
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
-    plugins: [ FullCalendar.googleCalendarPlugin ],
+    plugins: [ FullCalendar.GoogleCalendar ],
     initialView: 'timeGridWeek',
     firstDay: 1, // lundi
-    slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00',
-    allDaySlot: false,
-    initialDate: today,
-    visibleRange: {
-      start: firstDayOfWeek,
-      end: lastDay
-    },
-    googleCalendarApiKey: 'TA_CLE_API_ICI', // <-- remplace par ta clé
+    googleCalendarApiKey: 'TA_CLE_API_ICI', // <-- remplacer par votre clé API
     events: {
       googleCalendarId: 'receptionroulier@gmail.com'
     },
@@ -77,13 +63,19 @@ document.addEventListener('DOMContentLoaded', function() {
       right: ''
     },
     locale: 'fr',
-    height: 'auto'
+    height: 'auto',
+    visibleRange: {
+      start: firstDayOfWeek,
+      end: lastDay
+    }
   });
 
   calendar.render();
 });
 </script>
+
 </body>
 </html>
+
 
 
