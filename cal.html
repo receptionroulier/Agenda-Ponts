@@ -16,7 +16,6 @@
   --gap:4px;
   --days-font:14px;
   --event-font:13px;
-  --calendar-width:100%;
 }
 body{
   margin:0;
@@ -33,7 +32,16 @@ body{
 header{
   display:flex;
   justify-content:center;
+  align-items:center;
   margin-bottom:10px;
+  gap:20px;
+}
+header button{
+  background:none;
+  border:none;
+  color:var(--accent);
+  font-size:20px;
+  cursor:pointer;
 }
 header h1{
   margin:0;
@@ -45,7 +53,7 @@ header h1{
   border-radius:12px;
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-  width: var(--calendar-width);
+  width: 100%;
 }
 .grid {
   display:grid;
@@ -113,7 +121,7 @@ header h1{
   font-weight:600;
   font-size:11px;
 }
-.event.allDay .time { font-weight:700; color:#ffd479; }
+.event.allDay .time { display:none; }
 .event.more {
   font-size:12px;
   color:var(--muted);
@@ -143,7 +151,11 @@ header h1{
 </head>
 <body>
 <div class="container">
-  <header><h1 id="month-title">Mois</h1></header>
+  <header>
+    <button id="prev-week">&lt;</button>
+    <h1 id="month-title">Mois</h1>
+    <button id="next-week">&gt;</button>
+  </header>
 
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
@@ -171,39 +183,26 @@ function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// compute monday last week
-const today = new Date();
-const day = today.getDay();
-const mondayThisWeek = new Date(today);
-mondayThisWeek.setDate(today.getDate()-((day+6)%7));
-const mondayLastWeek = new Date(mondayThisWeek);
-mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
-const gridStart = mondayLastWeek;
-
-// array of dates
-const dates=[];
-for(let w=0;w<WEEKS;w++){
-  for(let i=0;i<7;i++){
-    const d=new Date(gridStart);
-    d.setDate(gridStart.getDate()+w*7+i);
-    dates.push(new Date(d));
-  }
+// Variables de navigation
+let gridStartDate;
+function computeGridStart(referenceDate){
+  const today = new Date(referenceDate);
+  const day = today.getDay();
+  const mondayThisWeek = new Date(today);
+  mondayThisWeek.setDate(today.getDate()-((day+6)%7));
+  const mondayLastWeek = new Date(mondayThisWeek);
+  mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
+  return mondayLastWeek;
 }
+gridStartDate = computeGridStart(new Date());
 
-// title
-const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-document.getElementById('month-title').textContent=monthNames[today.getMonth()]+' '+today.getFullYear();
-
-// build grid
-const gridEl=document.getElementById('grid');
-gridEl.innerHTML='';
-dates.forEach(d=>{
-  const dayEl=document.createElement('div');
-  dayEl.className='day';
-  dayEl.dataset.date=fmtDate(d);
-  dayEl.innerHTML=`<div class="day-header"><div class="date">${d.getDate()}</div><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div></div><div class="events"></div>`;
-  gridEl.appendChild(dayEl);
-});
+// popup
+function showPopup(title,start,end){
+  const popup=document.getElementById('popup');
+  document.getElementById('popup-title').textContent=title;
+  document.getElementById('popup-time').textContent='Début : '+start+'\nFin : '+end;
+  popup.style.display='block';
+}
 
 // fetch events
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
@@ -214,20 +213,38 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-// time range
-const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
-const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
-
-// popup
-function showPopup(title,start,end){
-  const popup=document.getElementById('popup');
-  document.getElementById('popup-title').textContent=title;
-  document.getElementById('popup-time').textContent='Début : '+start+'\nFin : '+end;
-  popup.style.display='block';
+// build dates array
+function buildDates(start){
+  const dates=[];
+  for(let w=0;w<WEEKS;w++){
+    for(let i=0;i<7;i++){
+      const d=new Date(start);
+      d.setDate(start.getDate()+w*7+i);
+      dates.push(new Date(d));
+    }
+  }
+  return dates;
 }
 
-// load events
-(async function loadAll(){
+// render grid
+async function renderCalendar(){
+  const dates = buildDates(gridStartDate);
+  const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  document.getElementById('month-title').textContent=monthNames[dates[7].getMonth()]+' '+dates[7].getFullYear();
+
+  const gridEl=document.getElementById('grid');
+  gridEl.innerHTML='';
+  dates.forEach(d=>{
+    const dayEl=document.createElement('div');
+    dayEl.className='day';
+    dayEl.dataset.date=fmtDate(d);
+    dayEl.innerHTML=`<div class="day-header"><div class="date">${d.getDate()}</div><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div></div><div class="events"></div>`;
+    gridEl.appendChild(dayEl);
+  });
+
+  const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
+  const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
+
   try{
     const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString()).then(json=>({calendar:c,items:json.items||[]})).catch(err=>({calendar:c,error:err})));
     const results=await Promise.all(promises);
@@ -264,7 +281,6 @@ function showPopup(title,start,end){
       }
     }
 
-    // render
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
       const evList=eventsByDay[date]||[];
@@ -286,9 +302,8 @@ function showPopup(title,start,end){
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
 
-        const timeText=ev.allDay?'Jour':fmtTime(ev.start);
+        const timeText=ev.allDay?'':fmtTime(ev.start);
         evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-
         evEl.onclick=()=>showPopup(ev.title,timeText,ev.end?fmtTime(ev.end):timeText);
         eventsContainer.appendChild(evEl);
       }
@@ -301,10 +316,11 @@ function showPopup(title,start,end){
       }
     }
 
-    // style days past/future/today
+    // style past/future/today
     const todayStr=fmtDate(new Date());
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
+      dayEl.classList.remove('past','future','today');
       if(date===todayStr) dayEl.classList.add('today');
       else if(date<todayStr) dayEl.classList.add('past');
       else dayEl.classList.add('future');
@@ -312,9 +328,21 @@ function showPopup(title,start,end){
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
-    document.getElementById('grid').innerHTML=`<div style="padding:20px;color:#999">Erreur lors du chargement des événements. Voir console.</div>`;
   }
-})();
+}
+
+// navigation
+document.getElementById('prev-week').onclick=()=>{
+  gridStartDate.setDate(gridStartDate.getDate()-7);
+  renderCalendar();
+};
+document.getElementById('next-week').onclick=()=>{
+  gridStartDate.setDate(gridStartDate.getDate()+7);
+  renderCalendar();
+};
+
+// initial render
+renderCalendar();
 </script>
 </body>
 </html>
