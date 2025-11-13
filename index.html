@@ -142,10 +142,20 @@ h2 {
     <div id="ponts-table">Chargement...</div>
   </div>
 
-  <div class="right">
-    <div class="calendar-wrapper">
-      <iframe src="https://receptionroulier.github.io/Agenda-Ponts/cal.html"></iframe>
-    </div>
+  <div class="calendar-wrapper">
+  <iframe id="calendar-frame" src="https://receptionroulier.github.io/Agenda-Ponts/cal.html"></iframe>
+</div>
+
+<script>
+// Réception du message de hauteur depuis l'iframe
+window.addEventListener('message', function(event) {
+  if(event.data?.type === 'calendarHeight') {
+    const iframe = document.getElementById('calendar-frame');
+    iframe.style.height = event.data.height + 'px';
+  }
+});
+</script>
+
   </div>
 </div>
 
