@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ponts HAROPA & Calendrier Google</title>
+<title>Ponts HAROPA & Calendrier</title>
 
 <style>
 body {
@@ -128,7 +128,6 @@ h2 {
   height: calc(100vh - 80px);
   border: 0;
   border-radius: 10px;
-  filter: invert(90%) hue-rotate(180deg);
 }
 
 /* === Mobile === */
@@ -149,23 +148,13 @@ h2 {
   </div>
 
   <div class="right">
-    <h2 id="calendar-month"></h2>
     <div class="calendar-wrapper">
-       <iframe src="https://calendar.google.com/calendar/embed?height=800&wkst=2&ctz=Europe%2FParis&showPrint=0&showNav=0&showTitle=0&showTz=0&showCalendars=0&showDate=0&showTabs=0&src=cmVjZXB0aW9ucm91bGllckBnbWFpbC5jb20&src=c21yLnByb2dyYW1tZUBnbWFpbC5jb20&color=%230b8043&color=%233f51b5" style="border-width:0" frameborder="0" scrolling="no"></iframe>
+       <iframe src="https://receptionroulier.github.io/Agenda-Ponts/cal.html" frameborder="0"></iframe>
     </div>
   </div>
 </div>
 
 <script>
-// === Affichage du mois courant ===
-function afficherMois() {
-  const mois = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  const maintenant = new Date();
-  document.getElementById("calendar-month").textContent = `${mois[maintenant.getMonth()]} ${maintenant.getFullYear()}`;
-}
-afficherMois();
-setInterval(afficherMois, 3600000);
-
 // === Countdown synchronisé avec fetchPonts ===
 let countdown = 5;
 function updateCountdown() {
