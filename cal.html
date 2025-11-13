@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - personnalisé</title>
+<title>Calendrier 4 semaines - sombre amélioré</title>
 
 <style>
 :root{
-  --bg:#1a1a1a;
-  --card:#252525;
-  --muted:#888;
+  --bg:#101214; 
+  --card:#1c1f23;
+  --muted:#777;
   --text:#eaeaea;
-  --accent:#00e5ff;
-  --gap:6px;
-  --days-font:13px;
-  --event-font:12px;
-  --day-height:120px;
+  --gap:4px; 
+  --days-font:14px;
+  --event-font:13px;
+  --color-reception:#109c53; 
+  --color-smr:#5768cb;
+  --title-color:#00e5ff;
+  --border:#aaa;
 }
 body{
   margin:0;
@@ -26,44 +28,69 @@ body{
   box-sizing:border-box;
 }
 .container{
-  max-width:100%;
+  max-width:1500px;
   margin:0 auto;
 }
 header{
   display:flex;
-  align-items:center;
   justify-content:center;
-  margin-bottom:10px;
+  align-items:center;
+  gap:16px;
+  margin-bottom:12px;
 }
 header h1{
   margin:0;
-  font-size:22px;
-  color:var(--accent);
+  font-size:24px;
+  color:var(--title-color);
+  text-align:center;
 }
+.nav-btn{
+  cursor:pointer;
+  font-size:20px;
+  font-weight:bold;
+  color:var(--text);
+  user-select:none;
+}
+
 .calendar {
-  display:flex;
-  justify-content:center;
+  background: var(--card);
+  border-radius:16px;
+  padding:16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
+
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
-  width:100%;
 }
+
 .day {
-  background: var(--card);
-  border-radius:10px;
-  min-height: var(--day-height);
-  padding:6px;
+  background: #1c1f23;
+  border-radius:12px;
+  min-height:150px; /* hauteur augmentée */
+  padding:12px;
   box-sizing:border-box;
-  border:1px solid #444;
+  border:1px solid var(--border);
   overflow:hidden;
-  position:relative;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: all 0.2s;
+  color: var(--text);
 }
-.day.past { background:#1c1c1c; color:#666; }
-.day.future { background:#2a2a2a; }
-.day.today { background:#2e2e3a; transform:scale(1.05); z-index:1; }
+
+.day.today {
+  transform: scale(1.05);
+  background-color: #2a2d31;
+}
+
+.day.past {
+  background-color: #2f3236; /* inversé : jours passés plus clairs que futur */
+  color:#aaa;
+}
+
+.day.future {
+  background-color: #141619; /* jours futurs plus sombre */
+  color:#eaeaea;
+}
 
 .day-header{
   display:flex;
@@ -71,248 +98,311 @@ header h1{
   align-items:center;
   font-size:var(--days-font);
   margin-bottom:6px;
+  flex-direction: row-reverse;
 }
-.day .date { font-weight:600; }
-.day .dow { font-size:12px; color:var(--muted); }
-.events { display:flex; flex-direction:column; gap:4px; overflow:hidden; max-height: calc(var(--day-height) - 28px); }
+
+.day .date {
+  font-weight:600;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.events {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  overflow:hidden;
+  max-height: calc((100vh - 250px)/4);
+}
 
 .event {
   display:flex;
   gap:6px;
   align-items:flex-start;
-  padding:4px 6px;
-  border-radius:6px;
   font-size:var(--event-font);
-  line-height:1.05;
-  color:#fff;
-  cursor:pointer;
+  line-height:1.1;
   overflow:hidden;
+  cursor:pointer;
+  background:none;
 }
-.event .time { min-width:44px; font-weight:600; font-size:11px; }
+
+.event .time { min-width:40px; font-weight:600; font-size:12px; }
 .event .title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.event.allDay .time { font-weight:700; color:#ffd479; }
 
-.c-reception { background:#109c53; }
-.c-smr { background:#5768cb; }
+.event.allDay .time { display:none; }
 
-.popup {
-  position:absolute;
-  background:#252525;
-  border:1px solid #444;
-  border-radius:10px;
-  padding:12px;
-  min-width:200px;
-  max-width:300px;
-  z-index:10;
+.event.more {
+  font-size:12px;
+  color:var(--muted);
+  padding-left:6px;
+}
+
+/* couleurs texte par calendrier */
+.c-reception { color: var(--color-reception); }
+.c-smr { color: var(--color-smr); }
+
+/* évènements assombris pour les jours passés */
+.day.past .event { opacity:0.5; color:#999; }
+.day.past .event .time { color:#999; }
+
+/* Responsive */
+@media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:520px){ .grid { grid-template-columns: repeat(1, 1fr); } }
+
+/* popup modal */
+#event-modal{
   display:none;
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  background:#1c1f23;
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  z-index:1000;
+  color:#eaeaea;
+  max-width:500px;
+  width:90%;
+}
+#event-modal h2{ margin-top:0; font-size:22px; color:#eaeaea; }
+#modal-overlay{
+  display:none;
+  position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.5);
+  z-index:999;
+}
+#event-modal .close-btn{
+  display:inline-block;
+  margin-top:15px;
+  padding:6px 14px;
+  background:#333;
   color:#fff;
-}
-.popup .title { font-weight:bold; margin-bottom:6px; }
-.popup .time { font-size:12px; margin-bottom:4px; }
-
-.nav {
-  display:flex;
-  justify-content:space-between;
-  width:100%;
-  margin-bottom:6px;
-}
-.nav button{
-  background:var(--card);
-  border:1px solid #444;
-  color:var(--text);
-  padding:4px 8px;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
 }
-.nav button:hover{ background:#333; }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
+    <span class="nav-btn" id="prev-week">&lt;</span>
     <h1 id="month-title">Mois</h1>
+    <span class="nav-btn" id="next-week">&gt;</span>
   </header>
-  <div class="nav">
-    <button id="prev-week">&lt; Semaine précédente</button>
-    <button id="next-week">Semaine suivante &gt;</button>
-  </div>
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
   </div>
-  <div class="popup" id="popup"></div>
+</div>
+
+<div id="modal-overlay"></div>
+<div id="event-modal">
+  <h2 id="modal-title"></h2>
+  <p id="modal-start"></p>
+  <p id="modal-end"></p>
+  <p id="modal-desc"></p>
+  <div class="close-btn" onclick="closeModal()">Fermer</div>
 </div>
 
 <script>
+// --- CONFIG ---
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id: 'receptionroulier@gmail.com', key: 'reception', css: 'c-reception' },
   { id: 'smr.programme@gmail.com', key: 'smr', css: 'c-smr' }
 ];
-const WEEKS = 4;
+const WEEKS=4;
 
-let startMonday = new Date();
-startMonday.setDate(startMonday.getDate() - ((startMonday.getDay()+6)%7) - 7);
-
+// --- HELPERS ---
 function fmtDate(d){ return d.toISOString().split('T')[0]; }
 function pad(n){ return n<10?'0'+n:n; }
-function fmtTime(dt){ const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes()); }
-function shortTitle(s,max=60){return s.length>max?s.slice(0,max-1)+'…':s;}
+function fmtTime(dt){ if(!dt) return ''; const d=new Date(dt); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
-function buildGrid(){
+let gridStart;
+
+function renderCalendar(startDate){
+  gridStart = new Date(startDate);
+  const today=new Date();
   const dates=[];
-  for(let w=0; w<WEEKS; w++){
+  for(let w=0;w<WEEKS;w++){
     for(let i=0;i<7;i++){
-      const d = new Date(startMonday);
-      d.setDate(startMonday.getDate() + w*7 + i);
+      const d=new Date(gridStart);
+      d.setDate(gridStart.getDate()+w*7+i);
       dates.push(new Date(d));
     }
   }
-  const gridEl = document.getElementById('grid');
+
+  const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  document.getElementById('month-title').textContent = monthNames[today.getMonth()]+' '+today.getFullYear();
+
+  const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-  const today = new Date();
-  today.setHours(0,0,0,0);
   dates.forEach(d=>{
-    const dayEl = document.createElement('div');
+    const dayEl=document.createElement('div');
     dayEl.className='day';
-    if(d < today) dayEl.classList.add('past');
-    else if(d > today) dayEl.classList.add('future');
-    else dayEl.classList.add('today');
     dayEl.dataset.date=fmtDate(d);
     dayEl.innerHTML=`
       <div class="day-header">
-        <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
         <div class="date">${d.getDate()}</div>
+        <div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div>
       </div>
       <div class="events"></div>
     `;
     gridEl.appendChild(dayEl);
   });
+
+  const todayStr = fmtDate(today);
+  for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    const date = dayEl.dataset.date;
+    if(date === todayStr) dayEl.classList.add('today');
+    else if(date < todayStr) dayEl.classList.add('past');
+    else dayEl.classList.add('future');
+  }
+
+  loadEvents(dates[0], dates[dates.length-1]);
 }
 
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-async function fetchEventsForCalendar(calId, timeMin, timeMax){
+// --- FETCH EVENTS ---
+async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)
-    +'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)
-    +'&singleEvents=true&orderBy=startTime&maxResults=2500';
+            +'&timeMin='+encodeURIComponent(timeMin)
+            +'&timeMax='+encodeURIComponent(timeMax)
+            +'&singleEvents=true&orderBy=startTime&maxResults=2500';
   const res=await fetch(url);
   if(!res.ok) throw new Error('HTTP '+res.status);
   return res.json();
 }
 
-async function loadEvents(){
-  const gridDays=document.querySelectorAll('.day');
-  const timeMin=new Date(startMonday); timeMin.setHours(0,0,0,0);
-  const timeMax=new Date(startMonday); timeMax.setDate(timeMax.getDate()+WEEKS*7-1); timeMax.setHours(23,59,59,999);
+async function loadEvents(timeMinDate, timeMaxDate){
+  const timeMin=new Date(timeMinDate); timeMin.setHours(0,0,0,0);
+  const timeMax=new Date(timeMaxDate); timeMax.setHours(23,59,59,999);
   try{
-    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id, timeMin.toISOString(), timeMax.toISOString())
-      .then(json=>({calendar:c, items:json.items||[]}))
+    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString())
+      .then(json=>({calendar:c,items:json.items||[]}))
       .catch(err=>({calendar:c,error:err})));
     const results=await Promise.all(promises);
-
     const eventsByDay={};
     const seen=new Set();
+
     for(const res of results){
       if(res.error){ console.warn('Erreur API',res.calendar.id,res.error); continue; }
+      const cal=res.calendar;
       for(const it of res.items){
-        const key = it.iCalUID || it.id || (it.summary+(it.start?.dateTime||it.start?.date));
-        if(seen.has(key)) continue;
-        seen.add(key);
-        const start=it.start?.dateTime||it.start?.date;
-        const end=it.end?.dateTime||it.end?.date;
-        const allDay=!!it.start?.date && !it.start?.dateTime;
-        if(allDay){
+        const dedupeKey=it.iCalUID||it.id||(it.summary || '') + (it.start?.dateTime || it.start?.date);
+        if(seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        let start=it.start?.dateTime||it.start?.date;
+        let end=it.end?.dateTime||it.end?.date;
+        const isAllDay=!!it.start?.date && !it.start?.dateTime;
+        if(isAllDay){
           const s=new Date(start+'T00:00:00');
           const e=new Date(end+'T00:00:00');
-          for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
-            const k=fmtDate(d);
-            eventsByDay[k]=eventsByDay[k]||[];
-            eventsByDay[k].push({title:it.summary,start:null,allDay:true,calendarKey:res.calendar.key,end:end});
+          for(let d=new Date(s);d<e;d.setDate(d.getDate()+1)){
+            const key=fmtDate(d);
+            eventsByDay[key]=eventsByDay[key]||[];
+            eventsByDay[key].push({
+              title:it.summary || '(sans titre)',
+              start:s,
+              end:e,
+              allDay:true,
+              calendarKey:cal.key,
+              description:it.description||''
+            });
           }
         } else {
           const s=new Date(start);
-          const k=fmtDate(s);
-          eventsByDay[k]=eventsByDay[k]||[];
-          eventsByDay[k].push({title:it.summary,start:start,allDay:false,calendarKey:res.calendar.key,end:end});
+          const e=end?new Date(end):null;
+          const dayKey=fmtDate(s);
+          eventsByDay[dayKey]=eventsByDay[dayKey]||[];
+          eventsByDay[dayKey].push({
+            title:it.summary || '(sans titre)',
+            start:s,
+            end:e,
+            allDay:false,
+            calendarKey:cal.key,
+            description:it.description||''
+          });
         }
       }
     }
 
-    for(const dayEl of gridDays){
+    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
       const evList=eventsByDay[date]||[];
-      const evContainer=dayEl.querySelector('.events');
-      evContainer.innerHTML='';
+      const eventsContainer=dayEl.querySelector('.events');
+      eventsContainer.innerHTML='';
+
       evList.sort((a,b)=>{
-        if(a.allDay && !b.allDay) return -1;
-        if(!a.allDay && b.allDay) return 1;
-        return a.start && b.start ? new Date(a.start)-new Date(b.start):0;
+        if(a.allDay&&!b.allDay) return -1;
+        if(!a.allDay&&b.allDay) return 1;
+        if(a.allDay&&b.allDay) return 0;
+        return new Date(a.start)-new Date(b.start);
       });
-      const MAX=6;
-      evList.slice(0,MAX).forEach(ev=>{
+
+      const MAX_PER_CELL=6;
+      const show=evList.slice(0,MAX_PER_CELL);
+      for(const ev of show){
         const evEl=document.createElement('div');
         evEl.className='event '+(ev.allDay?'allDay':'');
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
-        const timeText=ev.allDay?'':fmtTime(ev.start);
-        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${escapeHtml(shortTitle(ev.title,80))}</div>`;
-        evEl.onclick=e=>{
-          showPopup(e.currentTarget,ev);
-        };
-        evContainer.appendChild(evEl);
-      });
-      if(evList.length>MAX){
+        const timeText=ev.allDay?'':pad(ev.start.getHours())+':'+pad(ev.start.getMinutes());
+        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${escapeHtml(ev.title)}</div>`;
+        evEl.onclick=()=>openModal(ev);
+        eventsContainer.appendChild(evEl);
+      }
+
+      if(evList.length>MAX_PER_CELL){
         const moreEl=document.createElement('div');
         moreEl.className='event more';
-        moreEl.textContent=`+ ${evList.length-MAX} autres`;
-        evContainer.appendChild(moreEl);
+        moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
+        eventsContainer.appendChild(moreEl);
       }
     }
-  }catch(err){ console.error('Erreur chargement events',err); }
-}
 
-// Popup
-const popup=document.getElementById('popup');
-function showPopup(target,event){
-  let html='';
-  if(event.allDay){
-    html+=`<div class="title">${escapeHtml(event.title)}</div>`;
-    html+=`<div class="time">(Toute la journée)</div>`;
-  } else {
-    const d1=new Date(event.start);
-    const d2=new Date(event.end||event.start);
-    const options={weekday:'long',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'};
-    html+=`<div class="title">${escapeHtml(event.title)}</div>`;
-    html+=`<div class="time">Du: ${d1.toLocaleDateString('fr-FR',options)}<br>Au: ${d2.toLocaleDateString('fr-FR',options)}</div>`;
+  }catch(err){
+    console.error('Erreur chargement events:',err);
   }
-  popup.innerHTML=html;
-  popup.style.display='block';
-  const rect=target.getBoundingClientRect();
-  popup.style.top=(rect.bottom+window.scrollY+4)+'px';
-  popup.style.left=(rect.left+window.scrollX)+'px';
 }
 
-document.addEventListener('click',e=>{
-  if(!e.target.closest('.event')) popup.style.display='none';
-});
+// --- modal ---
+function openModal(ev){
+  document.getElementById('modal-title').textContent=ev.title;
+  document.getElementById('modal-start').textContent='Début : '+(ev.start?fmtTime(ev.start):'Toute la journée');
+  document.getElementById('modal-end').textContent='Fin : '+(ev.end?fmtTime(ev.end):'Toute la journée');
+  document.getElementById('modal-desc').textContent=ev.description||'';
+  document.getElementById('modal-overlay').style.display='block';
+  document.getElementById('event-modal').style.display='block';
+}
+function closeModal(){
+  document.getElementById('modal-overlay').style.display='none';
+  document.getElementById('event-modal').style.display='none';
+}
 
-// Navigation
-document.getElementById('prev-week').onclick=()=>{
-  startMonday.setDate(startMonday.getDate()-7);
-  buildGrid();
-  loadEvents();
+// --- navigation semaines ---
+document.getElementById('prev-week').onclick = () => {
+  const prev = new Date(gridStart);
+  prev.setDate(prev.getDate()-7);
+  renderCalendar(prev);
 };
-document.getElementById('next-week').onclick=()=>{
-  startMonday.setDate(startMonday.getDate()+7);
-  buildGrid();
-  loadEvents();
+document.getElementById('next-week').onclick = () => {
+  const next = new Date(gridStart);
+  next.setDate(next.getDate()+7);
+  renderCalendar(next);
 };
 
-// Init
-buildGrid();
-loadEvents();
+// --- initial render ---
+const today=new Date();
+const day=today.getDay();
+const mondayThisWeek=new Date(today);
+mondayThisWeek.setDate(today.getDate()-((day+6)%7));
+const mondayLastWeek=new Date(mondayThisWeek);
+mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
+renderCalendar(mondayLastWeek);
 </script>
 </body>
 </html>
-
