@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - sombre amélioré</title>
+<title>Calendrier 4 semaines - sombre responsive</title>
 
 <style>
 :root{
@@ -28,7 +28,7 @@ body{
   box-sizing:border-box;
 }
 .container{
-  max-width:1500px;
+  max-width:100%;
   margin:0 auto;
 }
 header{
@@ -46,7 +46,7 @@ header h1{
 }
 .nav-btn{
   cursor:pointer;
-  font-size:20px;
+  font-size:22px;
   font-weight:bold;
   color:var(--text);
   user-select:none;
@@ -57,6 +57,8 @@ header h1{
   border-radius:16px;
   padding:16px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  width:100%;
+  overflow-x:auto;
 }
 
 .grid {
@@ -68,27 +70,29 @@ header h1{
 .day {
   background: #1c1f23;
   border-radius:12px;
-  min-height:150px; /* hauteur augmentée */
+  min-height:150px; 
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
   transition: all 0.2s;
   color: var(--text);
+  position:relative;
 }
 
 .day.today {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  z-index:1;
   background-color: #2a2d31;
 }
 
 .day.past {
-  background-color: #2f3236; /* inversé : jours passés plus clairs que futur */
+  background-color: #2f3236; 
   color:#aaa;
 }
 
 .day.future {
-  background-color: #141619; /* jours futurs plus sombre */
+  background-color: #141619; 
   color:#eaeaea;
 }
 
@@ -138,19 +142,15 @@ header h1{
   padding-left:6px;
 }
 
-/* couleurs texte par calendrier */
 .c-reception { color: var(--color-reception); }
 .c-smr { color: var(--color-smr); }
 
-/* évènements assombris pour les jours passés */
 .day.past .event { opacity:0.5; color:#999; }
 .day.past .event .time { color:#999; }
 
-/* Responsive */
 @media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width:520px){ .grid { grid-template-columns: repeat(1, 1fr); } }
 
-/* popup modal */
 #event-modal{
   display:none;
   position:fixed;
