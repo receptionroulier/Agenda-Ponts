@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - mode sombre</title>
+<title>Calendrier 4 semaines - sombre amélioré</title>
 
 <style>
 :root{
-  --bg:#101214; /* fond général sombre */
-  --card:#1c1f23; /* fond des cases */
+  --bg:#101214; 
+  --card:#1c1f23;
   --muted:#777;
   --text:#eaeaea;
   --gap:4px; 
   --days-font:14px;
   --event-font:13px;
-  --color-reception:#109c53; /* vert */
-  --color-smr:#5768cb; /* bleu */
+  --color-reception:#109c53; 
+  --color-smr:#5768cb;
+  --title-color:#00e5ff;
+  --border:#aaa;
 }
 body{
   margin:0;
@@ -39,7 +41,7 @@ header{
 header h1{
   margin:0;
   font-size:24px;
-  color:var(--text);
+  color:var(--title-color);
   text-align:center;
 }
 .nav-btn{
@@ -66,23 +68,28 @@ header h1{
 .day {
   background: #1c1f23;
   border-radius:12px;
-  min-height:120px;
-  padding:10px;
+  min-height:150px; /* hauteur augmentée */
+  padding:12px;
   box-sizing:border-box;
-  border:1px solid rgba(255,255,255,0.05);
+  border:1px solid var(--border);
   overflow:hidden;
   transition: all 0.2s;
   color: var(--text);
 }
 
 .day.today {
-  transform: scale(1.03);
-  background-color: #2a2d31; /* un peu plus clair que le fond sombre */
+  transform: scale(1.05);
+  background-color: #2a2d31;
 }
 
 .day.past {
-  background-color: #141619;
-  color:#666;
+  background-color: #2f3236; /* inversé : jours passés plus clairs que futur */
+  color:#aaa;
+}
+
+.day.future {
+  background-color: #141619; /* jours futurs plus sombre */
+  color:#eaeaea;
 }
 
 .day-header{
@@ -118,7 +125,6 @@ header h1{
   overflow:hidden;
   cursor:pointer;
   background:none;
-  color:inherit;
 }
 
 .event .time { min-width:40px; font-weight:600; font-size:12px; }
@@ -135,6 +141,10 @@ header h1{
 /* couleurs texte par calendrier */
 .c-reception { color: var(--color-reception); }
 .c-smr { color: var(--color-smr); }
+
+/* évènements assombris pour les jours passés */
+.day.past .event { opacity:0.5; color:#999; }
+.day.past .event .time { color:#999; }
 
 /* Responsive */
 @media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -248,6 +258,7 @@ function renderCalendar(startDate){
     const date = dayEl.dataset.date;
     if(date === todayStr) dayEl.classList.add('today');
     else if(date < todayStr) dayEl.classList.add('past');
+    else dayEl.classList.add('future');
   }
 
   loadEvents(dates[0], dates[dates.length-1]);
