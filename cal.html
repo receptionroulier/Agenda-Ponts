@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - responsive et jour inversé</title>
+<title>Calendrier 4 semaines - responsive et popups améliorés</title>
 
 <style>
 :root{
@@ -72,6 +72,8 @@ header h1{
   overflow:hidden;
   transition: transform 0.3s, background 0.3s, color 0.3s, z-index 0.3s;
   position:relative;
+  display:flex;
+  flex-direction:column;
 }
 .day.today {
   transform: scale(1.1);
@@ -90,7 +92,7 @@ header h1{
 }
 .day-header{
   display:flex;
-  flex-direction:column;
+  justify-content:space-between;
   align-items:center;
   font-size:var(--days-font);
   margin-bottom:6px;
@@ -98,7 +100,6 @@ header h1{
 .day .dow {
   font-weight:600;
   font-size:14px;
-  margin-bottom:4px;
 }
 .day .date {
   font-weight:500;
@@ -108,8 +109,8 @@ header h1{
   display:flex;
   flex-direction:column;
   gap:4px;
-  overflow:hidden;
-  max-height: calc( (100vh - 220px) / 4 );
+  overflow-y:auto;
+  flex:1;
 }
 .event {
   display:flex;
@@ -157,16 +158,9 @@ header h1{
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; white-space:nowrap; }
 
 /* --- RESPONSIVE --- */
-@media(max-width:1200px){
-  .grid { grid-template-columns: repeat(4, 1fr); }
-}
-@media(max-width:900px){
-  .grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media(max-width:520px){
-  .grid { grid-template-columns: 1fr; }
-  .day { min-height:120px; }
-}
+@media(max-width:1200px){ .grid { grid-template-columns: repeat(4, 1fr); } }
+@media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
+@media(max-width:520px){ .grid { grid-template-columns: 1fr; } .day { min-height:120px; } }
 </style>
 </head>
 <body>
@@ -201,7 +195,7 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function fmtPopupDate(dt){if(!dt) return ''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric'})+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtPopupDate(dt){if(!dt) return ''; const d=new Date(dt); return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s; }
 
 // Variables de navigation
@@ -225,7 +219,7 @@ function showPopup(title,start,end,allDay=false){
   if(allDay){
     txt='Toute la journée';
   }else{
-    txt='Du '+fmtPopupDate(start)+' au '+fmtPopupDate(end||start);
+    txt='Du '+fmtPopupDate(start)+' > '+fmtTime(start)+'\nAu '+fmtPopupDate(end||start)+' > '+fmtTime(end||start);
   }
   document.getElementById('popup-time').textContent=txt;
   popup.style.display='block';
