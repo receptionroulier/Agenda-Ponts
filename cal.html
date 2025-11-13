@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - amélioré</title>
+<title>Calendrier 4 semaines - mode sombre</title>
 
 <style>
 :root{
-  --bg:#d0d2d5; /* fond gris plus clair */
-  --card:#f0f1f3; 
+  --bg:#101214; /* fond général sombre */
+  --card:#1c1f23; /* fond des cases */
   --muted:#777;
-  --text:#222;
-  --accent:#00e5ff;
-  --gap:6px; /* espace plus fin entre cases */
+  --text:#eaeaea;
+  --gap:4px; 
   --days-font:14px;
   --event-font:13px;
+  --color-reception:#109c53; /* vert */
+  --color-smr:#5768cb; /* bleu */
 }
 body{
   margin:0;
@@ -38,7 +39,7 @@ header{
 header h1{
   margin:0;
   font-size:24px;
-  color:var(--accent);
+  color:var(--text);
   text-align:center;
 }
 .nav-btn{
@@ -53,7 +54,7 @@ header h1{
   background: var(--card);
   border-radius:16px;
   padding:16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
 }
 
 .grid {
@@ -63,24 +64,25 @@ header h1{
 }
 
 .day {
-  background: #e3e4e6;
+  background: #1c1f23;
   border-radius:12px;
   min-height:120px;
   padding:10px;
   box-sizing:border-box;
-  border:1px solid rgba(0,0,0,0.05);
+  border:1px solid rgba(255,255,255,0.05);
   overflow:hidden;
   transition: all 0.2s;
+  color: var(--text);
 }
 
 .day.today {
   transform: scale(1.03);
-  background-color: #c5c6c8;
+  background-color: #2a2d31; /* un peu plus clair que le fond sombre */
 }
 
 .day.past {
-  background-color: #b0b1b3;
-  color:#555;
+  background-color: #141619;
+  color:#666;
 }
 
 .day-header{
@@ -94,6 +96,9 @@ header h1{
 
 .day .date {
   font-weight:600;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
 .events {
@@ -113,6 +118,7 @@ header h1{
   overflow:hidden;
   cursor:pointer;
   background:none;
+  color:inherit;
 }
 
 .event .time { min-width:40px; font-weight:600; font-size:12px; }
@@ -127,8 +133,8 @@ header h1{
 }
 
 /* couleurs texte par calendrier */
-.c-reception { color:#00ff55; } /* vert vif */
-.c-smr { color:#9b5eff; } /* bleu mauve */
+.c-reception { color: var(--color-reception); }
+.c-smr { color: var(--color-smr); }
 
 /* Responsive */
 @media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
@@ -140,28 +146,28 @@ header h1{
   position:fixed;
   top:50%; left:50%;
   transform:translate(-50%,-50%);
-  background:#f0f1f3;
+  background:#1c1f23;
   padding:30px;
   border-radius:16px;
   box-shadow:0 10px 30px rgba(0,0,0,0.5);
   z-index:1000;
-  color:#222;
+  color:#eaeaea;
   max-width:500px;
   width:90%;
 }
-#event-modal h2{ margin-top:0; font-size:22px; color:#222; }
+#event-modal h2{ margin-top:0; font-size:22px; color:#eaeaea; }
 #modal-overlay{
   display:none;
   position:fixed; top:0; left:0;
   width:100%; height:100%;
-  background:rgba(0,0,0,0.4);
+  background:rgba(0,0,0,0.5);
   z-index:999;
 }
 #event-modal .close-btn{
   display:inline-block;
   margin-top:15px;
   padding:6px 14px;
-  background:#444;
+  background:#333;
   color:#fff;
   border-radius:8px;
   cursor:pointer;
@@ -190,20 +196,21 @@ header h1{
 </div>
 
 <script>
+// --- CONFIG ---
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
-  { id: 'receptionroulier@gmail.com', key: 'reception', label: 'Réception', css: 'c-reception' },
-  { id: 'smr.programme@gmail.com', key: 'smr', label: 'SMR Programme', css: 'c-smr' }
+  { id: 'receptionroulier@gmail.com', key: 'reception', css: 'c-reception' },
+  { id: 'smr.programme@gmail.com', key: 'smr', css: 'c-smr' }
 ];
 const WEEKS=4;
 
+// --- HELPERS ---
 function fmtDate(d){ return d.toISOString().split('T')[0]; }
 function pad(n){ return n<10?'0'+n:n; }
 function fmtTime(dt){ if(!dt) return ''; const d=new Date(dt); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
-function shortTitle(s,max=60){ if(!s) return s.length>max?s.slice(0,max-1)+'…':s; }
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
-let gridStart; // date de départ de la grille
+let gridStart;
 
 function renderCalendar(startDate){
   gridStart = new Date(startDate);
@@ -246,6 +253,7 @@ function renderCalendar(startDate){
   loadEvents(dates[0], dates[dates.length-1]);
 }
 
+// --- FETCH EVENTS ---
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)
@@ -350,7 +358,7 @@ async function loadEvents(timeMinDate, timeMaxDate){
   }
 }
 
-// modal
+// --- modal ---
 function openModal(ev){
   document.getElementById('modal-title').textContent=ev.title;
   document.getElementById('modal-start').textContent='Début : '+(ev.start?fmtTime(ev.start):'Toute la journée');
@@ -364,7 +372,7 @@ function closeModal(){
   document.getElementById('event-modal').style.display='none';
 }
 
-// navigation semaines
+// --- navigation semaines ---
 document.getElementById('prev-week').onclick = () => {
   const prev = new Date(gridStart);
   prev.setDate(prev.getDate()-7);
@@ -376,7 +384,7 @@ document.getElementById('next-week').onclick = () => {
   renderCalendar(next);
 };
 
-// initial render
+// --- initial render ---
 const today=new Date();
 const day=today.getDay();
 const mondayThisWeek=new Date(today);
@@ -384,7 +392,6 @@ mondayThisWeek.setDate(today.getDate()-((day+6)%7));
 const mondayLastWeek=new Date(mondayThisWeek);
 mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
 renderCalendar(mondayLastWeek);
-
 </script>
 </body>
 </html>
