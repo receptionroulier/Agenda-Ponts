@@ -4,11 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intégration Google Calendar avec FullCalendar</title>
+  <!-- Bibliothèques FullCalendar et Google API -->
   <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
   <script src='https://apis.google.com/js/api.js'></script>
+  <style>
+    #calendar {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
 </head>
 <body>
+  <h1 style="text-align: center;">Mon Calendrier Google</h1>
   <div id="calendar"></div>
 
   <script>
@@ -25,6 +34,7 @@
         loadCalendar();
       }).catch(function(error) {
         console.error("Erreur d'initialisation ou d'authentification :", error);
+        alert("Erreur d'authentification. Voir la console pour plus de détails.");
       });
     }
 
@@ -49,7 +59,12 @@
           const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             events: events,
-            locale: 'fr'
+            locale: 'fr',
+            headerToolbar: {
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            }
           });
           calendar.render();
         } else {
@@ -67,3 +82,4 @@
   </script>
 </body>
 </html>
+
