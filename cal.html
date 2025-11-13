@@ -100,15 +100,13 @@ header h1{
 .events {
   display:flex;
   flex-direction:column;
-  gap:2px;
-  overflow-y:auto;       /* scroll vertical uniquement */
-  overflow-x:hidden;
-  max-height: calc( (100vh - 200px) / 4 );
+  gap:4px;
+  overflow-x:hidden; /* plus de scroll horizontal */
 }
 .event {
   display:flex;
-  gap:4px;
-  align-items:center;
+  gap:6px;
+  align-items:flex-start;
   padding:4px;
   border-radius:6px;
   font-size:var(--event-font);
@@ -116,11 +114,9 @@ header h1{
   color:#fff;
   background: rgba(0,0,0,0.3);
   cursor:pointer;
-  transition: background 0.2s;
 }
-.event:hover { background: rgba(0,0,0,0.5); }
 .event .time {
-  min-width:50px;
+  min-width:44px;
   font-weight:600;
   font-size:11px;
 }
@@ -150,9 +146,6 @@ header h1{
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
-/* Responsive */
-@media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
-@media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
 </head>
 <body>
@@ -187,7 +180,6 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
 // Variables de navigation
@@ -204,13 +196,10 @@ function computeGridStart(referenceDate){
 gridStartDate = computeGridStart(new Date());
 
 // popup
-function showPopup(title,start,end,isAllDay){
+function showPopup(title,start,end){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  let text;
-  if(isAllDay) text='Toute la journée';
-  else text='Du '+start+' au '+end;
-  document.getElementById('popup-time').textContent=text;
+  document.getElementById('popup-time').textContent=start+' → '+end;
   popup.style.display='block';
 }
 
@@ -312,10 +301,9 @@ async function renderCalendar(){
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
 
-        const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
-        const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
-        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-        evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
+        const timeText=ev.allDay?'':fmtTime(ev.start);
+        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
+        evEl.onclick=()=>showPopup(ev.title,timeText,ev.end?fmtTime(ev.end):timeText);
         eventsContainer.appendChild(evEl);
       }
 
@@ -327,6 +315,7 @@ async function renderCalendar(){
       }
     }
 
+    // style past/future/today
     const todayStr=fmtDate(new Date());
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
@@ -356,3 +345,4 @@ renderCalendar();
 </script>
 </body>
 </html>
+
