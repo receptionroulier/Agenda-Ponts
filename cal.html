@@ -5,13 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calendrier FullCalendar Google</title>
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<!-- FullCalendar CSS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.css" rel="stylesheet">
+
+<!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/google-calendar@6.1.8/index.global.min.js"></script>
 
 <style>
-body { margin:0; font-family: Arial,sans-serif; background:#121212; color:#fff; }
-#calendar { max-width: 900px; margin:20px auto; background:#1a1a1a; border-radius:10px; padding:10px; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #fff;
+  }
+  #calendar {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #1a1a1a;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  }
 </style>
 </head>
 <body>
@@ -22,23 +37,33 @@ body { margin:0; font-family: Arial,sans-serif; background:#121212; color:#fff; 
 document.addEventListener('DOMContentLoaded', function() {
   const calendarEl = document.getElementById('calendar');
 
+  // Calcul des dates pour afficher 4 semaines
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - start.getDay() - 7); // début semaine précédente
+  const end = new Date(now);
+  end.setDate(end.getDate() + (7 - end.getDay()) + 14); // fin 2 semaines suivantes
+
   const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'timeGridWeek',
-    plugins: [ FullCalendar.googleCalendarPlugin ],
-    events: {
-      googleCalendarId: 'receptionroulier@gmail.com',
-    },
+    initialView: 'dayGridWeek',
+    firstDay: 1, // lundi
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'timeGridWeek,timeGridDay'
+      right: 'dayGridWeek,dayGridMonth'
     },
-    firstDay: 1,
+    validRange: {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    },
+    googleCalendarApiKey: 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo',
+    events: {
+      googleCalendarId: 'receptionroulier@gmail.com'
+    },
+    themeSystem: 'standard',
     nowIndicator: true,
-    height: 'auto',
     weekNumbers: true,
-    eventColor: '#3f51b5',
-    eventTextColor: '#fff'
+    height: 'auto'
   });
 
   calendar.render();
