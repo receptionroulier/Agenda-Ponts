@@ -358,5 +358,22 @@ document.getElementById('next-week').onclick=()=>{
 // initial render
 renderCalendar();
 </script>
+  <script>
+// Fonction pour envoyer la hauteur totale du calendrier à l'iframe parente
+function sendHeight() {
+  const height = document.body.scrollHeight;
+  window.parent.postMessage({type: 'calendarHeight', height: height}, '*');
+}
+
+// Envoyer la hauteur initiale
+sendHeight();
+
+// Ré-envoyer la hauteur si la taille change (ex: navigation semaines)
+const observer = new MutationObserver(sendHeight);
+observer.observe(document.getElementById('grid'), {childList: true, subtree: true});
+
+// Aussi si la fenêtre redimensionne (responsive)
+window.addEventListener('resize', sendHeight);
+</script>
 </body>
 </html>
