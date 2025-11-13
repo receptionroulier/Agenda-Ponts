@@ -22,7 +22,7 @@ body {
 /* === Colonne de gauche (ponts) === */
 .left {
   background: #1e1e1e;
-  width: 20%; /* réduit */
+  width: 20%;
   padding: 8px;
   overflow-y: auto;
   box-sizing: border-box;
@@ -34,6 +34,13 @@ h2 {
   color: #00e5ff;
   margin: 0 0 10px;
   font-size: 1.2em;
+}
+
+#ponts-title {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
 }
 
 #ponts-table {
@@ -61,6 +68,24 @@ h2 {
   border-left: 4px solid lightgreen;
 }
 
+/* Clignotement pour ponts en manoeuvre */
+@keyframes clignoter-fade {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pont-card.manoeuvre {
+  border-left: 4px solid #1c3cff; /* bord bleu */
+}
+.pont-card.manoeuvre .pastille {
+  color: #1c3cff; /* pastille bleue */
+  animation: clignoter-fade 1s infinite;
+}
+.pont-card.manoeuvre .pont-nom,
+.pont-card.manoeuvre .pont-etat {
+  animation: clignoter-fade 1s infinite;
+}
+
+/* Texte normal des ponts */
 .pont-nom {
   font-weight: bold;
   margin-bottom: 2px;
@@ -93,7 +118,7 @@ h2 {
   height: 100%;
   border: 0;
   border-radius: 10px;
-  filter: invert(90%) hue-rotate(180deg); /* mode sombre */
+  filter: invert(90%) hue-rotate(180deg);
 }
 
 /* === Mobile === */
@@ -109,7 +134,7 @@ h2 {
 
 <div class="container">
   <div class="left">
-    <h2>État des Ponts</h2>
+    <h2 id="ponts-title">État des Ponts (<span id="countdown">5</span>s)</h2>
     <div id="ponts-table">Chargement...</div>
   </div>
 
@@ -122,22 +147,25 @@ h2 {
 </div>
 
 <script>
-// === Fonction pour afficher le mois courant ===
+// === Affichage du mois courant ===
 function afficherMois() {
-  const mois = [
-    "Janvier","Février","Mars","Avril","Mai","Juin",
-    "Juillet","Août","Septembre","Octobre","Novembre","Décembre"
-  ];
+  const mois = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
   const maintenant = new Date();
-  const texte = `${mois[maintenant.getMonth()]} ${maintenant.getFullYear()}`;
-  document.getElementById("calendar-month").textContent = texte;
+  document.getElementById("calendar-month").textContent = `${mois[maintenant.getMonth()]} ${maintenant.getFullYear()}`;
 }
-
-// Mise à jour du mois toutes les heures
 afficherMois();
 setInterval(afficherMois, 3600000);
 
-// === Chargement des ponts HAROPA ===
+// === Countdown pour rafraîchissement ===
+let countdown = 5;
+function updateCountdown() {
+  document.getElementById("countdown").textContent = countdown;
+  countdown--;
+  if (countdown < 0) countdown = 5;
+}
+setInterval(updateCountdown, 1000);
+
+// === Chargement des ponts HAROPA toutes les 5s ===
 async function fetchPonts() {
   try {
     const url = encodeURIComponent('https://www.havre-port.com/map/getPonts');
@@ -147,19 +175,23 @@ async function fetchPonts() {
     const pontsJSON = JSON.parse(data.contents).data;
     const ponts = Object.values(pontsJSON);
 
-    const fermes = ponts.filter(p => !p.statutText.toLowerCase().includes('ouvert'));
+    const fermes = ponts.filter(p => !p.statutText.toLowerCase().includes('ouvert') && !p.statutText.includes('(Manoeuvre en cours)'));
+    const manoeuvre = ponts.filter(p => p.statutText.includes('(Manoeuvre en cours)'));
     const ouverts = ponts.filter(p => p.statutText.toLowerCase().includes('ouvert'));
-    const triPonts = [...fermes, ...ouverts];
+
+    const triPonts = [...fermes, ...manoeuvre, ...ouverts];
 
     let html = '';
     triPonts.forEach(p => {
       const ouvert = p.statutText.toLowerCase().includes('ouvert');
-      const classe = ouvert ? 'ouvert' : 'ferme';
-      const pastille = ouvert ? '🟢' : '🔴';
+      const isManoeuvre = p.statutText.includes('(Manoeuvre en cours)');
+      const classe = ouvert ? 'ouvert' : (!isManoeuvre ? 'ferme' : '');
+      const pastille = ouvert ? '🟢' : (isManoeuvre ? '🔵' : '🔴');
       const infos = p.forceText ? p.forceText : `MàJ : ${p.date}`;
+
       html += `
-        <div class="pont-card ${classe}">
-          <div class="pont-nom">${pastille} ${p.nom}</div>
+        <div class="pont-card ${classe} ${isManoeuvre ? 'manoeuvre' : ''}">
+          <div class="pont-nom"><span class="pastille">${pastille}</span> ${p.nom}</div>
           <div class="pont-etat">${p.statutText}</div>
           <div class="pont-infos">${infos}</div>
         </div>`;
@@ -172,8 +204,9 @@ async function fetchPonts() {
   }
 }
 
+// Premier chargement + intervalle toutes les 5s
 fetchPonts();
-setInterval(fetchPonts, 60000);
+setInterval(fetchPonts, 5000);
 </script>
 
 </body>
