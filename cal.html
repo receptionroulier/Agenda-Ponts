@@ -18,7 +18,7 @@ body {
 h1 {
   text-align: center;
   color: #00e5ff;
-  margin: 15px 0;
+  margin: 10px 0;
 }
 
 /* Wrapper calendrier */
@@ -31,7 +31,7 @@ h1 {
   box-shadow: 0 0 10px rgba(0,0,0,0.6);
 }
 
-/* Adapter FullCalendar au style sombre */
+/* Ajustement FullCalendar sombre */
 #calendar-wrapper .fc {
   background: #1a1a1a;
   color: #fff;
@@ -41,12 +41,16 @@ h1 {
 }
 #calendar-wrapper .fc-event {
   color: #fff;
+  font-size: 0.85em;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
 </head>
 <body>
 
-<h1>Calendrier FullCalendar</h1>
+<h1 id="calendar-month">Mois</h1>
 <div id="calendar-wrapper"></div>
 
 <!-- FullCalendar JS -->
@@ -56,33 +60,38 @@ h1 {
 document.addEventListener('DOMContentLoaded', function() {
   const calendarEl = document.getElementById('calendar-wrapper');
 
+  // Calcul des bornes visibles
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = dimanche, 1 = lundi, ...
+  
+  // Commencer la semaine précédente (lundi)
+  const start = new Date(now);
+  start.setDate(now.getDate() - dayOfWeek - 6); // dimanche semaine précédente - on décale pour lundi
+  if (start.getDay() !== 1) { start.setDate(start.getDate() + 1); } // ajustement lundi
+
+  // Fin 2 semaines après la semaine en cours (dimanche)
+  const end = new Date(now);
+  end.setDate(now.getDate() + (14 - dayOfWeek)); 
+
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'timeGridWeek',
     locale: 'fr',
+    firstDay: 1, // semaine commence lundi
     nowIndicator: true,
-    firstDay: 1, // lundi
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'timeGridWeek,dayGridMonth'
-    },
+    headerToolbar: false, // juste le mois en titre
     googleCalendarApiKey: 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo',
     events: {
       googleCalendarId: 'receptionroulier@gmail.com'
     },
-    visibleRange: function(currentDate) {
-      // semaine précédente -> semaine en cours -> 2 semaines suivantes
-      const start = new Date(currentDate);
-      start.setDate(start.getDate() - start.getDay() - 6); // dimanche semaine précédente
-      const end = new Date(currentDate);
-      end.setDate(end.getDate() + (14 - end.getDay())); // samedi dans 2 semaines
-      return { start: start, end: end };
-    },
+    visibleRange: { start: start, end: end },
     eventColor: '#0b8043',
     height: 'auto',
-    expandRows: true,
-    nowIndicator: true
+    expandRows: true
   });
+
+  // Affichage mois courant dans le titre
+  const mois = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  document.getElementById("calendar-month").textContent = mois[now.getMonth()] + " " + now.getFullYear();
 
   calendar.render();
 });
@@ -90,4 +99,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
+
 
