@@ -22,7 +22,7 @@ body {
 /* === Colonne de gauche (ponts) === */
 .left {
   background: #1e1e1e;
-  width: 20%; /* réduit de 28% à 20% */
+  width: 20%; /* réduit */
   padding: 8px;
   overflow-y: auto;
   box-sizing: border-box;
@@ -39,24 +39,23 @@ h2 {
 #ponts-table {
   display: flex;
   flex-direction: column;
-  gap: 6px; /* réduit l'espacement entre cartes */
+  gap: 6px;
 }
 
 /* Style des cartes de ponts */
 .pont-card {
   background: #2a2a2a;
   border-radius: 8px;
-  padding: 6px; /* réduit le padding */
+  padding: 6px;
   box-shadow: 0 0 4px rgba(0,0,0,0.4);
   transition: transform 0.2s ease;
-  font-size: 0.8em; /* texte plus petit */
+  font-size: 0.8em;
 }
 .pont-card:hover {
   transform: scale(1.02);
 }
 .pont-card.ferme {
   border-left: 4px solid red;
-  animation: clignoter 1s infinite;
 }
 .pont-card.ouvert {
   border-left: 4px solid lightgreen;
@@ -71,12 +70,6 @@ h2 {
 }
 .pont-infos {
   color: #bbb;
-}
-
-/* Animation clignotante */
-@keyframes clignoter {
-  0%,50%,100% { opacity: 1; }
-  25%,75% { opacity: 0.5; }
 }
 
 /* === Colonne droite (calendrier) === */
@@ -180,7 +173,7 @@ async function fetchPonts() {
 }
 
 fetchPonts();
-setInterval(fetchPonts, 5000);
+setInterval(fetchPonts, 60000);
 </script>
 
 </body>
