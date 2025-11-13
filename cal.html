@@ -43,7 +43,7 @@
     // Charger les événements et afficher le calendrier
     function loadCalendar() {
       gapi.client.calendar.events.list({
-        'calendarId': 'receptionroulier@gmail.com',
+        'calendarId': 'fr.french#holiday@group.v.calendar.google.com',
         'timeMin': (new Date()).toISOString(),
         'showDeleted': false,
         'singleEvents': true,
