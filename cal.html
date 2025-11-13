@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - sombre amélioré</title>
+<title>Calendrier 4 semaines - sombre responsive</title>
 
 <style>
 :root{
@@ -28,7 +28,7 @@ body{
   box-sizing:border-box;
 }
 .container{
-  max-width:1500px;
+  max-width:100%;
   margin:0 auto;
 }
 header{
@@ -46,7 +46,7 @@ header h1{
 }
 .nav-btn{
   cursor:pointer;
-  font-size:20px;
+  font-size:22px;
   font-weight:bold;
   color:var(--text);
   user-select:none;
@@ -57,6 +57,8 @@ header h1{
   border-radius:16px;
   padding:16px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  width:100%;
+  overflow-x:auto;
 }
 
 .grid {
@@ -68,27 +70,29 @@ header h1{
 .day {
   background: #1c1f23;
   border-radius:12px;
-  min-height:150px; /* hauteur augmentée */
+  min-height:150px; 
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
   transition: all 0.2s;
   color: var(--text);
+  position:relative;
 }
 
 .day.today {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  z-index:1;
   background-color: #2a2d31;
 }
 
 .day.past {
-  background-color: #2f3236; /* inversé : jours passés plus clairs que futur */
+  background-color: #2f3236; 
   color:#aaa;
 }
 
 .day.future {
-  background-color: #141619; /* jours futurs plus sombre */
+  background-color: #141619; 
   color:#eaeaea;
 }
 
@@ -138,19 +142,15 @@ header h1{
   padding-left:6px;
 }
 
-/* couleurs texte par calendrier */
 .c-reception { color: var(--color-reception); }
 .c-smr { color: var(--color-smr); }
 
-/* évènements assombris pour les jours passés */
 .day.past .event { opacity:0.5; color:#999; }
 .day.past .event .time { color:#999; }
 
-/* Responsive */
 @media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width:520px){ .grid { grid-template-columns: repeat(1, 1fr); } }
 
-/* popup modal */
 #event-modal{
   display:none;
   position:fixed;
@@ -254,155 +254,4 @@ function renderCalendar(startDate){
   });
 
   const todayStr = fmtDate(today);
-  for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-    const date = dayEl.dataset.date;
-    if(date === todayStr) dayEl.classList.add('today');
-    else if(date < todayStr) dayEl.classList.add('past');
-    else dayEl.classList.add('future');
-  }
-
-  loadEvents(dates[0], dates[dates.length-1]);
-}
-
-// --- FETCH EVENTS ---
-async function fetchEventsForCalendar(calId,timeMin,timeMax){
-  const base='https://www.googleapis.com/calendar/v3/calendars/';
-  const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)
-            +'&timeMin='+encodeURIComponent(timeMin)
-            +'&timeMax='+encodeURIComponent(timeMax)
-            +'&singleEvents=true&orderBy=startTime&maxResults=2500';
-  const res=await fetch(url);
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  return res.json();
-}
-
-async function loadEvents(timeMinDate, timeMaxDate){
-  const timeMin=new Date(timeMinDate); timeMin.setHours(0,0,0,0);
-  const timeMax=new Date(timeMaxDate); timeMax.setHours(23,59,59,999);
-  try{
-    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString())
-      .then(json=>({calendar:c,items:json.items||[]}))
-      .catch(err=>({calendar:c,error:err})));
-    const results=await Promise.all(promises);
-    const eventsByDay={};
-    const seen=new Set();
-
-    for(const res of results){
-      if(res.error){ console.warn('Erreur API',res.calendar.id,res.error); continue; }
-      const cal=res.calendar;
-      for(const it of res.items){
-        const dedupeKey=it.iCalUID||it.id||(it.summary || '') + (it.start?.dateTime || it.start?.date);
-        if(seen.has(dedupeKey)) continue;
-        seen.add(dedupeKey);
-
-        let start=it.start?.dateTime||it.start?.date;
-        let end=it.end?.dateTime||it.end?.date;
-        const isAllDay=!!it.start?.date && !it.start?.dateTime;
-        if(isAllDay){
-          const s=new Date(start+'T00:00:00');
-          const e=new Date(end+'T00:00:00');
-          for(let d=new Date(s);d<e;d.setDate(d.getDate()+1)){
-            const key=fmtDate(d);
-            eventsByDay[key]=eventsByDay[key]||[];
-            eventsByDay[key].push({
-              title:it.summary || '(sans titre)',
-              start:s,
-              end:e,
-              allDay:true,
-              calendarKey:cal.key,
-              description:it.description||''
-            });
-          }
-        } else {
-          const s=new Date(start);
-          const e=end?new Date(end):null;
-          const dayKey=fmtDate(s);
-          eventsByDay[dayKey]=eventsByDay[dayKey]||[];
-          eventsByDay[dayKey].push({
-            title:it.summary || '(sans titre)',
-            start:s,
-            end:e,
-            allDay:false,
-            calendarKey:cal.key,
-            description:it.description||''
-          });
-        }
-      }
-    }
-
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-      const date=dayEl.dataset.date;
-      const evList=eventsByDay[date]||[];
-      const eventsContainer=dayEl.querySelector('.events');
-      eventsContainer.innerHTML='';
-
-      evList.sort((a,b)=>{
-        if(a.allDay&&!b.allDay) return -1;
-        if(!a.allDay&&b.allDay) return 1;
-        if(a.allDay&&b.allDay) return 0;
-        return new Date(a.start)-new Date(b.start);
-      });
-
-      const MAX_PER_CELL=6;
-      const show=evList.slice(0,MAX_PER_CELL);
-      for(const ev of show){
-        const evEl=document.createElement('div');
-        evEl.className='event '+(ev.allDay?'allDay':'');
-        const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
-        if(calMeta) evEl.classList.add(calMeta.css);
-        const timeText=ev.allDay?'':pad(ev.start.getHours())+':'+pad(ev.start.getMinutes());
-        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${escapeHtml(ev.title)}</div>`;
-        evEl.onclick=()=>openModal(ev);
-        eventsContainer.appendChild(evEl);
-      }
-
-      if(evList.length>MAX_PER_CELL){
-        const moreEl=document.createElement('div');
-        moreEl.className='event more';
-        moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
-        eventsContainer.appendChild(moreEl);
-      }
-    }
-
-  }catch(err){
-    console.error('Erreur chargement events:',err);
-  }
-}
-
-// --- modal ---
-function openModal(ev){
-  document.getElementById('modal-title').textContent=ev.title;
-  document.getElementById('modal-start').textContent='Début : '+(ev.start?fmtTime(ev.start):'Toute la journée');
-  document.getElementById('modal-end').textContent='Fin : '+(ev.end?fmtTime(ev.end):'Toute la journée');
-  document.getElementById('modal-desc').textContent=ev.description||'';
-  document.getElementById('modal-overlay').style.display='block';
-  document.getElementById('event-modal').style.display='block';
-}
-function closeModal(){
-  document.getElementById('modal-overlay').style.display='none';
-  document.getElementById('event-modal').style.display='none';
-}
-
-// --- navigation semaines ---
-document.getElementById('prev-week').onclick = () => {
-  const prev = new Date(gridStart);
-  prev.setDate(prev.getDate()-7);
-  renderCalendar(prev);
-};
-document.getElementById('next-week').onclick = () => {
-  const next = new Date(gridStart);
-  next.setDate(next.getDate()+7);
-  renderCalendar(next);
-};
-
-// --- initial render ---
-const today=new Date();
-const day=today.getDay();
-const mondayThisWeek=new Date(today);
-mondayThisWeek.setDate(today.getDate()-((day+6)%7));
-const mondayLastWeek=new Date(mondayThisWeek);
-mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
-renderCalendar(mondayLastWeek);
-</script>
-</body>
-</html>
+  fo
