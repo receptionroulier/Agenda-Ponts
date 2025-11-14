@@ -41,7 +41,6 @@ header h1{
   font-size:24px;
   color:var(--accent);
   text-align:center;
-  flex:1;
 }
 .nav-buttons{
   display:flex;
@@ -78,15 +77,11 @@ header h1{
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
-  overflow: visible;
+  overflow:hidden;
   position:relative;
   display:flex;
   flex-direction:column;
   transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
-  opacity:0;
-}
-.day.fade-in {
-  animation: fadeIn 0.25s forwards;
 }
 
 /* Jour actuel */
@@ -132,18 +127,19 @@ header h1{
 /* Zoom au survol pour jour actuel et futur */
 .day.today:hover,
 .day.future:hover {
+  animation:none;
+  transform: scale(1.12);
   z-index:10;
-}
-.day.future:hover::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:12px;
-  pointer-events:none;
-  box-shadow:0 0 15px 5px rgba(0,229,255,0.3);
+  width: 140%;
 }
 
-/* Titles */
+/* Affichage titres sur une ligne */
+.day .event .title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow:ellipsis;
+}
+
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -198,10 +194,6 @@ header h1{
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
-
-@keyframes fadeIn {
-  to { opacity:1; }
-}
 
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
@@ -289,13 +281,12 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-  dates.forEach((d,i)=>{
+  dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
     dayEl.dataset.date=fmtDate(d);
     dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
     gridEl.appendChild(dayEl);
-    setTimeout(()=>dayEl.classList.add('fade-in'), i*50);
   });
 
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
@@ -364,17 +355,6 @@ async function renderCalendar(){
         evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
-
-        // agrandissement dynamique si titre tronqué
-        evEl.addEventListener('mouseenter',()=>{
-          const titleDiv = evEl.querySelector('.title');
-          if(titleDiv.scrollWidth > titleDiv.clientWidth){
-            dayEl.style.width = Math.min(titleDiv.scrollWidth + 60, window.innerWidth*0.8)+'px';
-          }
-        });
-        evEl.addEventListener('mouseleave',()=>{
-          dayEl.style.width = '';
-        });
       }
 
       if(evList.length>MAX_PER_CELL){
