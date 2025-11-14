@@ -1,18 +1,293 @@
-<div class="calendar">
-    <header>
-        <button id="prevMonth">&lt;</button>
-        <h2 id="monthName"></h2>
-        <button id="nextMonth">&gt;</button>
-        <button id="todayBtn">Aujourd’hui</button>
-        <button id="fullscreenBtn">Plein écran</button>
-    </header>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Calendrier</title>
+<style>
+/* ========= VARIABLES ========= */
+:root {
+    --card: #1a1c1f;
+    --border: #2b2d31;
+    --gap: 8px;
+    --days-font: 14px;
+    --muted: #7a7a7a;
+    --bg: #141619;
+}
 
+/* ========= GLOBAL ========= */
+body {
+    font-family: Arial, sans-serif;
+    background: #0e0f11;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+/* ========= HEADER ========= */
+header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+header button {
+    background: #1f2226;
+    border: 1px solid var(--border);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+header button:hover {
+    background: rgba(0,229,255,0.2);
+}
+
+/* ========= CALENDAR CONTAINER ========= */
+.calendar {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
+
+/* ========= GRID ========= */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--gap);
+}
+
+/* ========= DAY CELL ========= */
+.day {
+    height: calc((100vh - 120px) / 4);
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.35s, background-color 0.25s, box-shadow 0.35s;
+}
+
+/* ---- Zoom selon jour ---- */
+.day.today {
+    transform: scale(1.1);
+    z-index: 2;
+    background-color: #1f2226;
+    box-shadow: 0 0 20px rgba(0,229,255,0.3);
+}
+
+.day.past {
+    transform: scale(0.92);
+    background-color: #0f1113;
+    color: #777;
+}
+
+.day.future {
+    background-color: #1c1f23;
+    color: #eaeaea;
+}
+
+/* ---- Zoom dynamique au survol ---- */
+.day:hover {
+    transform: scale(1.22);
+    z-index: 10;
+    background-color: #23272c;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: visible;
+}
+
+.day:hover .event {
+    white-space: normal;
+}
+
+/* ========= HEADER OF EACH DAY ========= */
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--days-font);
+}
+
+.date {
+    font-weight: 600;
+}
+
+/* ========= EVENTS ========= */
+.events {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.event {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    font-size: 13px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.event:hover {
+    background: rgba(0,0,0,0.5);
+}
+
+.event .time {
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* couleurs */
+.c-reception { color: #10c46b; }
+.c-smr { color: #6470ff; }
+
+/* ========= POPUP ========= */
+#popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1c1f23;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    display: none;
+    min-width: 300px;
+    max-width: 90%;
+}
+
+#popup h3 {
+    margin-top: 0;
+}
+
+#popup .close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    font-size: 22px;
+}
+
+/* ========= RESPONSIVE ========= */
+@media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+    .grid { grid-template-columns: repeat(1, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <button id="prevMonth">&lt;</button>
+    <h2 id="monthName"></h2>
+    <button id="nextMonth">&gt;</button>
+    <button id="todayBtn">Aujourd’hui</button>
+    <button id="fullscreenBtn">Plein écran</button>
+</header>
+
+<div class="calendar">
     <div class="grid" id="calendarGrid"></div>
 </div>
 
+<!-- POPUP -->
 <div id="popup">
     <span class="close">×</span>
     <h3 id="popupTitle"></h3>
     <p id="popupTime"></p>
     <p id="popupDesc"></p>
 </div>
+
+<script>
+/* ===============================
+   ====== CALENDRIER JS ==========
+   =============================== */
+
+const grid = document.getElementById("calendarGrid");
+const monthName = document.getElementById("monthName");
+
+let current = new Date();
+
+/* --- RENDU DU CALENDRIER --- */
+function renderCalendar() {
+    grid.innerHTML = "";
+
+    const year = current.getFullYear();
+    const month = current.getMonth();
+
+    monthName.textContent = current.toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric"
+    });
+
+    const firstDay = (new Date(year, month, 1).getDay() || 7);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    /* Cases vides du début */
+    for (let i = 1; i < firstDay; i++) {
+        const empty = document.createElement("div");
+        grid.appendChild(empty);
+    }
+
+    /* Jours du mois */
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(year, month, day);
+        const cell = document.createElement("div");
+        cell.className = "day";
+
+        /* past / today / future */
+        if (dateObj.toDateString() === today.toDateString()) {
+            cell.classList.add("today");
+        } else if (dateObj < today) {
+            cell.classList.add("past");
+        } else {
+            cell.classList.add("future");
+        }
+
+        cell.innerHTML = `
+            <div class="day-header">
+                <span class="date">${day}</span>
+            </div>
+            <div class="events"></div>
+        `;
+
+        grid.appendChild(cell);
+    }
+}
+
+/* --- Navigation mois --- */
+document.getElementById("prevMonth").onclick = () => {
+    current.setMonth(current.getMonth() - 1);
+    renderCalendar();
+};
+document.getElementById("nextMonth").onclick = () => {
+    current.setMonth(current.getMonth() + 1);
+    renderCalendar();
+};
+
+/* --- Bouton Aujourd’hui --- */
+document.getElementById("todayBtn").onclick = () => {
+    current = new Date();
+    renderCalendar();
+};
+
+/* Initialisation */
+renderCalendar();
+</script>
+
+</body>
+</html>
