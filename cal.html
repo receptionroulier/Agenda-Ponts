@@ -80,7 +80,7 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  transition: transform 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
 /* Jour actuel */
 @keyframes todayPulse {
@@ -100,7 +100,7 @@ header h1{
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+  box-shadow:0 0 25px 10px rgba(0,229,255,0.5);
 }
 /* Jour futur */
 @keyframes futurePulse {
@@ -122,18 +122,18 @@ header h1{
 .day.today:hover {
   animation:none;
   transform: scale(1.18);
-  height:auto;
+  width:auto;
   z-index:10;
   box-shadow: 0 12px 40px rgba(0,229,255,0.6);
 }
 .day.future:hover {
   animation:none;
   transform: scale(1.12);
+  width:auto;
   z-index:10;
-  height:auto;
-  box-shadow:0 8px 20px rgba(0,229,255,0.3);
+  box-shadow:0 8px 25px rgba(0,229,255,0.4);
 }
-.day:hover .event { white-space: normal; }
+.day:hover .event { white-space: nowrap; }
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -383,3 +383,4 @@ setInterval(renderCalendar,60000);
 </script>
 </body>
 </html>
+
