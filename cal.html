@@ -56,17 +56,14 @@ header h1{
   padding:4px 8px;
   transition: background 0.3s, transform 0.3s;
 }
-.nav-buttons button:hover { 
-  background: rgba(0,229,255,0.2); 
-  transform: scale(1.05);
-}
+.nav-buttons button:hover { background: rgba(0,229,255,0.2); transform: scale(1.05); }
+
 .calendar {
   background: var(--card);
   border-radius:12px;
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
-  transition: all 0.3s ease;
 }
 .grid {
   display:grid;
@@ -86,45 +83,6 @@ header h1{
   flex-direction:column;
   transition: transform 0.35s ease, width 0.35s ease, box-shadow 0.35s ease;
 }
-/* Jour actuel */
-.day.today {
-  transform: scale(1.08);
-  background:#1f2226;
-  border:2px solid var(--accent);
-  z-index:2;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.4);
-  animation: todayGlow 3s infinite ease-in-out;
-}
-@keyframes todayGlow {
-  0%,100% { box-shadow:0 0 20px 8px rgba(0,229,255,0.4); }
-  50% { box-shadow:0 0 30px 12px rgba(0,229,255,0.6); }
-}
-/* Jour futur */
-.day.future {
-  transform: scale(1);
-  background:#1c1f23;
-  color:#eaeaea;
-  animation: futureGlow 3s infinite ease-in-out;
-}
-@keyframes futureGlow {
-  0%,100% { box-shadow:0 0 0 rgba(0,229,255,0); }
-  50% { box-shadow:0 0 15px 5px rgba(0,229,255,0.3); }
-}
-/* Jour passé */
-.day.past {
-  transform: scale(0.95);
-  background:#0f1113;
-  color:#555;
-}
-/* Zoom au survol jours actuels et futurs */
-.day.today:hover,
-.day.future:hover {
-  transform: scale(1.18);
-  width: auto;
-  z-index:10;
-  box-shadow:0 12px 40px rgba(0,229,255,0.6);
-}
-.day:hover .event { white-space: nowrap; text-overflow: ellipsis; overflow:hidden; }
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -149,10 +107,10 @@ header h1{
   border-radius:6px;
   background: rgba(0,0,0,0.3);
   cursor:pointer;
-  white-space:nowrap;
+  white-space: nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  transition: background 0.3s;
+  transition: background 0.2s;
 }
 .event:hover { background: rgba(0,0,0,0.5); }
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
@@ -162,6 +120,57 @@ header h1{
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
+/* Jour actuel */
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
+.day.today {
+  transform: scale(1.08);
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
+  animation: todayPulse 3s infinite ease-in-out;
+}
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+}
+
+/* Jour futur */
+@keyframes futurePulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
+.day.future {
+  transform: scale(1);
+  background:#1c1f23;
+  color:#eaeaea;
+  animation: futurePulse 3s infinite ease-in-out;
+}
+
+/* Jour passé */
+.day.past {
+  transform: scale(0.95);
+  background:#0f1113;
+  color:#555;
+}
+
+/* Zoom au survol pour jour actuel et futur */
+.day.today:hover,
+.day.future:hover {
+  animation: none;  /* arrête l'animation pulse */
+  transform: scale(1.18);
+  width: auto;
+  z-index:10;
+  box-shadow:0 12px 40px rgba(0,229,255,0.6);
+}
+
+/* Popup */
 #popup {
   position: fixed;
   top:50%;
