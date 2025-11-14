@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - sombre</title>
+<title>Calendrier 4 semaines - sombre (corrigé)</title>
 <style>
 :root{
   --bg:#121212;
@@ -56,7 +56,7 @@ header h1{
   padding:4px 8px;
   transition: all 0.35s ease;
 }
-.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
+.nav-buttons button:hover { background: rgba(0,229,255,0.12); }
 
 .calendar {
   background: var(--card);
@@ -81,7 +81,7 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  transition: transform 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
 
 /* Jour actuel */
@@ -102,7 +102,7 @@ header h1{
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.18);
 }
 
 /* Jour futur */
@@ -124,13 +124,12 @@ header h1{
   color:#555;
 }
 
-/* Zoom au survol pour jour actuel et futur */
+/* Zoom au survol pour jour actuel et futur - utilisation de scale plutôt que width */
 .day.today:hover,
 .day.future:hover {
   animation:none;
   transform: scale(1.12);
   z-index:10;
-  width: 140%;
 }
 
 /* Affichage titres sur une ligne */
@@ -228,28 +227,63 @@ const CALENDARS = [
 ];
 const WEEKS=4;
 
-function fmtDate(d){return d.toISOString().split('T')[0];}
+function fmtDate(d){
+  // returns YYYY-MM-DD from Date or string date
+  const dt = (typeof d === 'string') ? new Date(d) : d;
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const day = String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function pad(n){return n<10?'0'+n:n;}
-function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
+function fmtTime(dt){
+  if(!dt) return '';
+  const d = new Date(dt);
+  return pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function fmtPopupDate(dt){
+  if(!dt) return '';
+  const d=new Date(dt);
+  const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+  return dayNames[d.getDay()]+' '+d.getDate();
+}
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-let gridStartDate;
+// compute grid start as Monday of the *previous* week (so we show 4 weeks with the middle ones)
 function computeGridStart(referenceDate){
-  const today = new Date(referenceDate);
-  const day = today.getDay();
+  const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const day = today.getDay(); // 0 Sun .. 6 Sat
+  // find Monday of this week
   const mondayThisWeek = new Date(today);
-  mondayThisWeek.setDate(today.getDate()-((day+6)%7));
+  const offsetToMonday = (day + 6) % 7; // Sun->6, Mon->0, Tue->1...
+  mondayThisWeek.setDate(today.getDate() - offsetToMonday);
   const mondayLastWeek = new Date(mondayThisWeek);
   mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
   return mondayLastWeek;
 }
-gridStartDate = computeGridStart(new Date());
+
+let gridStartDate = computeGridStart(new Date());
 
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  let text=isAllDay?'Toute la journée':'Du '+start+' au '+end;
+  let text;
+  if(isAllDay){
+    text = 'Toute la journée';
+  } else if(start && end){
+    // if same day -> "À hh:mm", else "Du ... au ..."
+    const sDay = start.split(' ')[0];
+    const eDay = end.split(' ')[0];
+    if(sDay === eDay){
+      text = 'À ' + start.split(' ').slice(1).join(' ');
+    } else {
+      text = 'Du ' + start + ' au ' + end;
+    }
+  } else if(start){
+    text = start;
+  } else {
+    text = '';
+  }
   document.getElementById('popup-time').textContent=text;
   popup.style.display='block';
 }
@@ -266,12 +300,18 @@ function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
     for(let i=0;i<7;i++){
-      const d=new Date(start);
+      const d=new Date(start.getFullYear(), start.getMonth(), start.getDate());
       d.setDate(start.getDate()+w*7+i);
       dates.push(new Date(d));
     }
   }
   return dates;
+}
+
+function parseYMDToLocalDate(ymd){
+  // ymd is "YYYY-MM-DD" -> create a Date in local timezone for that day at 00:00
+  const [y,m,d] = ymd.split('-').map(Number);
+  return new Date(y, m-1, d);
 }
 
 async function renderCalendar(){
@@ -304,27 +344,68 @@ async function renderCalendar(){
       if(res.error){console.warn('Erreur API pour',res.calendar.id,res.error); continue;}
       const cal=res.calendar;
       for(const it of res.items){
-        const dedupeKey=it.iCalUID||it.id||(it.summary+(it.start?.dateTime||it.start?.date));
-        if(seen.has(dedupeKey)) continue;
-        seen.add(dedupeKey);
+        // dedupe by instance id (event instance id) when available - fallback to event id
+        const dedupeKey = it.id || (it.iCalUID ? (it.iCalUID + (it.start?.dateTime||it.start?.date||'')) : null);
+        if(dedupeKey && seen.has(dedupeKey)) continue;
+        if(dedupeKey) seen.add(dedupeKey);
 
-        let start=it.start?.dateTime||it.start?.date;
-        let end=it.end?.dateTime||it.end?.date;
-        const isAllDay=!!it.start?.date && !it.start?.dateTime;
+        let startRaw = it.start?.dateTime || it.start?.date;
+        let endRaw = it.end?.dateTime || it.end?.date;
+        const isAllDay = !!it.start?.date && !it.start?.dateTime;
 
         if(isAllDay){
-          const s=new Date(start+'T00:00:00');
-          const e=new Date(end+'T00:00:00');
-          for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
-            const key=fmtDate(d);
-            eventsByDay[key]=eventsByDay[key]||[];
-            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:cal.key});
+          // Google Calendar all-day: start and end are dates; end is exclusive
+          const s = new Date(startRaw+'T00:00:00');
+          const e = new Date(endRaw+'T00:00:00'); // exclusive
+          for(let d=new Date(s); d < e; d.setDate(d.getDate()+1)){
+            const key = fmtDate(d);
+            eventsByDay[key] = eventsByDay[key]||[];
+            eventsByDay[key].push({
+              title: it.summary || '(sans titre)',
+              start: null,
+              end: null,
+              allDay: true,
+              calendarKey: cal.key
+            });
           }
-        }else{
-          const s=new Date(start); const e=end?new Date(end):null;
-          const dayKey=fmtDate(s);
-          eventsByDay[dayKey]=eventsByDay[dayKey]||[];
-          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:cal.key});
+        } else {
+          // event with times: may span multiple days
+          const s = new Date(startRaw);
+          const e = endRaw ? new Date(endRaw) : null;
+
+          if(e && e > s){
+            // iterate days from start's date to last date that event intersects
+            const sDay = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+            // if end is exactly at 00:00 of the next day, we still want to show on previous day only; so treat endDay as end-1ms
+            const eAdj = new Date(e.getTime() - 1);
+            const eDay = new Date(eAdj.getFullYear(), eAdj.getMonth(), eAdj.getDate());
+
+            for(let d = new Date(sDay); d <= eDay; d.setDate(d.getDate()+1)){
+              const key = fmtDate(d);
+              eventsByDay[key] = eventsByDay[key]||[];
+              // For each day keep the original start/end to allow popup formatting; mark a flag multiDay=true
+              eventsByDay[key].push({
+                title: it.summary || '(sans titre)',
+                start: s.toISOString(),
+                end: e ? e.toISOString() : null,
+                allDay: false,
+                calendarKey: cal.key,
+                multiDay: true
+              });
+            }
+          } else {
+            // single-day time event
+            const dayKey = fmtDate(s);
+            eventsByDay[dayKey] = eventsByDay[dayKey]||[];
+            eventsByDay[dayKey].push({
+              title: it.summary || '(sans titre)',
+              start: s.toISOString(),
+              end: e ? e.toISOString() : null,
+              allDay: false,
+              calendarKey: cal.key,
+              multiDay: false
+            });
+          }
         }
       }
     }
@@ -339,7 +420,8 @@ async function renderCalendar(){
         if(a.allDay && !b.allDay) return -1;
         if(!a.allDay && b.allDay) return 1;
         if(a.allDay && b.allDay) return 0;
-        return new Date(a.start)-new Date(b.start);
+        // for multi-day or events crossing midnight, sort by their start times
+        return new Date(a.start) - new Date(b.start);
       });
 
       const MAX_PER_CELL=6;
@@ -350,9 +432,23 @@ async function renderCalendar(){
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
 
-        const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
-        const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
-        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
+        let timeText;
+        if(ev.allDay){
+          timeText = 'Toute la journée';
+        } else {
+          // prefer localized single time when event starts the same day; otherwise show start date + time
+          const startDate = ev.start ? new Date(ev.start) : null;
+          const endDate = ev.end ? new Date(ev.end) : null;
+          const startYMD = startDate ? fmtDate(startDate) : '';
+          if(startYMD === date){
+            timeText = (ev.multiDay ? fmtPopupDate(ev.start)+' '+fmtTime(ev.start) : fmtTime(ev.start));
+          } else {
+            timeText = fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
+          }
+        }
+
+        const endText = ev.end ? (fmtPopupDate(ev.end)+' '+fmtTime(ev.end)) : timeText;
+        evEl.innerHTML=`<div class="time">${ev.allDay?'':(timeText||'')}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
@@ -365,12 +461,15 @@ async function renderCalendar(){
       }
     }
 
-    const todayStr=fmtDate(new Date());
+    // set day classes using robust Date comparisons (create local dates)
+    const today = new Date();
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-      const date=dayEl.dataset.date;
+      const date=dayEl.dataset.date; // YYYY-MM-DD
+      const dayDate = parseYMDToLocalDate(date);
       dayEl.classList.remove('past','future','today');
-      if(date===todayStr) dayEl.classList.add('today');
-      else if(date<todayStr) dayEl.classList.add('past');
+      if(dayDate.getTime() === todayLocal.getTime()) dayEl.classList.add('today');
+      else if(dayDate.getTime() < todayLocal.getTime()) dayEl.classList.add('past');
       else dayEl.classList.add('future');
     }
 
@@ -386,7 +485,16 @@ document.getElementById('today-btn').onclick=()=>{ gridStartDate = computeGridSt
 
 // initial render
 renderCalendar();
-setInterval(renderCalendar,60000);
+
+// only refresh every 60s when the currently displayed grid corresponds to the current calendar window
+setInterval(()=>{
+  const currentGridStart = computeGridStart(new Date());
+  const gridStartYMD = fmtDate(gridStartDate);
+  const currentStartYMD = fmtDate(currentGridStart);
+  if(gridStartYMD === currentStartYMD){
+    renderCalendar();
+  }
+},60000);
 </script>
 </body>
 </html>
