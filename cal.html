@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - halo & hover</title>
+<title>Calendrier 4 semaines - propre</title>
 <style>
 :root{
   --bg:#121212;
@@ -74,19 +74,14 @@ header h1{
   flex-direction:column;
   transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
-/* Hover pour tout le monde */
-.day:hover {
-  transform: scale(1.22);
-  z-index:10;
-  background-color:#23272c;
-  box-shadow:0 12px 40px rgba(0,0,0,0.45);
-  overflow:visible;
+/* Animation jour actuel */
+@keyframes pulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
 }
-.day:hover .event { white-space: normal; }
-
-/* Jour actuel */
 .day.today {
-  transform: scale(1.08); /* léger zoom de base */
+  transform: scale(1.08);
+  animation: pulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
@@ -97,16 +92,20 @@ header h1{
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.3); /* halo permanent */
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.3);
 }
 /* Past / Future */
 .day.past { transform: scale(0.95); background:#0f1113; color:#555; }
-.day.future { transform: scale(1); background:#1c1f23; color:#eaeaea; animation: pulse-future 4s ease-in-out infinite; }
-
-@keyframes pulse-future {
-  0%,100%{ transform: scale(1); }
-  50%{ transform: scale(1.03); }
+.day.future { transform: scale(1); background:#1c1f23; color:#eaeaea; }
+/* Hover pour tout le monde */
+.day:hover {
+  transform: scale(1.22);
+  z-index:10;
+  background-color:#23272c;
+  box-shadow:0 12px 40px rgba(0,0,0,0.45);
+  overflow:visible;
 }
+.day:hover .event { white-space: normal; }
 
 .day-header{
   display:flex;
@@ -186,7 +185,6 @@ header h1{
 </div>
 
 <script>
-// --- Configuration ---
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', css:'c-reception'},
@@ -194,14 +192,13 @@ const CALENDARS = [
 ];
 const WEEKS=4;
 
-// --- Helpers ---
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// --- Navigation ---
+// navigation
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -214,7 +211,6 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
-// --- Popup ---
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
@@ -223,7 +219,6 @@ function showPopup(title,start,end,isAllDay){
   popup.style.display='block';
 }
 
-// --- Fetch events ---
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -232,7 +227,6 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-// --- Build dates array ---
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -245,7 +239,6 @@ function buildDates(start){
   return dates;
 }
 
-// --- Render Calendar ---
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -351,7 +344,7 @@ async function renderCalendar(){
   }
 }
 
-// Navigation
+// navigation
 document.getElementById('prev-week').onclick=()=>{
   gridStartDate.setDate(gridStartDate.getDate()-7);
   renderCalendar();
@@ -361,8 +354,9 @@ document.getElementById('next-week').onclick=()=>{
   renderCalendar();
 };
 
-// Initial render + auto refresh 1min
+// initial render
 renderCalendar();
+// mise à jour auto toutes les minutes
 setInterval(renderCalendar,60000);
 </script>
 </body>
