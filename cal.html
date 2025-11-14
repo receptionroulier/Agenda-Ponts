@@ -140,12 +140,6 @@ header h1{
   z-index:10;
 }
 
-.day:hover .event .title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow:ellipsis;
-}
-
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -380,13 +374,13 @@ async function renderCalendar(){
       else dayEl.classList.add('future');
     }
 
-    // Agrandissement largeur dynamique sur hover pour jour actuel et futur
+    // Largeur dynamique pour titres
     document.querySelectorAll('.day.today, .day.future').forEach(day=>{
       day.addEventListener('mouseenter', ()=>{
         const events = day.querySelectorAll('.event .title');
         let maxWidth = 0;
         events.forEach(t=>{
-          const w = t.scrollWidth + 16; // ajouter padding
+          const w = t.scrollWidth + 16;
           if(w > maxWidth) maxWidth = w;
         });
         const gridWidth = day.parentElement.offsetWidth / 7;
