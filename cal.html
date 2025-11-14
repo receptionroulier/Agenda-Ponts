@@ -57,6 +57,7 @@ header h1{
   transition: all 0.3s ease;
 }
 .nav-buttons button:hover { background: rgba(0,229,255,0.2); }
+
 .calendar {
   background: var(--card);
   border-radius:12px;
@@ -88,7 +89,7 @@ header h1{
   50%{ transform: scale(1.12); }
 }
 .day.today {
-  transform: scale(1.1);
+  transform: scale(1.08);
   animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
@@ -102,6 +103,7 @@ header h1{
   pointer-events:none;
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
+
 /* Jour futur */
 @keyframes futurePulse {
   0%,100%{ transform: scale(1); }
@@ -113,28 +115,22 @@ header h1{
   color:#eaeaea;
   animation: futurePulse 3s infinite ease-in-out;
 }
+
 /* Jour passé */
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
   color:#555;
+  transition: none;
 }
 
-/* Hover */
+/* Hover only for current and future days: enlarge width to show titles */
 .day.today:hover, .day.future:hover {
-  animation:none;
-  transform: scale(1.18);
-  z-index:10;
-  width:auto;
+  width: auto;
   box-shadow:0 12px 40px rgba(0,229,255,0.6);
 }
-.day.past:hover {
-  transform: none;
-  width: auto;
-  box-shadow: none;
-}
 
-/* Event titles on one line */
+/* Events titles always on one line */
 .day .event .title {
   white-space: nowrap;
   overflow: hidden;
