@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - fixe</title>
-
+<title>Calendrier 4 semaines - propre</title>
 <style>
 :root{
   --bg:#121212;
@@ -48,10 +47,6 @@ header h1{
   font-size:24px;
   color:var(--accent);
 }
-header button:hover{
-  background: rgba(0,229,255,0.2);
-  border-radius:4px;
-}
 .calendar {
   background: var(--card);
   border-radius:12px;
@@ -67,38 +62,29 @@ header button:hover{
 .day {
   background: #141619;
   border-radius:12px;
-  height: calc((100vh - 100px)/4); /* 4 semaines */
+  height: calc((100vh - 100px)/4);
   padding:8px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
-  position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, background-color 0.25s, box-shadow 0.35s, border-color 0.25s;
+  transition: transform 0.35s, background 0.3s, box-shadow 0.35s, color 0.3s;
+  position:relative;
 }
 .day.today {
   background-color: #1f2226;
   box-shadow: 0 0 25px rgba(0,229,255,0.4);
-  z-index:2;
-  transform: scale(1.05);
 }
-.day.past {
-  background-color: #0f1113;
-  color:#555;
-  transform: scale(0.95);
-}
-.day.future {
-  background-color: #1c1f23;
-  color:#eaeaea;
-  transform: scale(1);
-}
-/* Survol des jours */
+.day.past { background-color: #0f1113; color:#555; }
+.day.future { background-color: #1c1f23; color:#eaeaea; }
+
+/* Hover pour tous les jours */
 .day:hover {
   transform: scale(1.15);
   z-index:10;
-  background-color: #23272c;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  background-color:#23272c;
+  box-shadow:0 12px 40px rgba(0,0,0,0.45);
 }
 .day-header{
   display:flex;
@@ -107,10 +93,7 @@ header button:hover{
   font-size:var(--days-font);
   margin-bottom:2px;
 }
-.day .date {
-  font-weight:600;
-  font-size:var(--days-font);
-}
+.date { font-weight:600; font-size:var(--days-font); }
 .events {
   flex:1 1 auto;
   display:flex;
@@ -120,37 +103,25 @@ header button:hover{
 }
 .event {
   display:flex;
-  align-items:center;
   gap:4px;
+  align-items:center;
   padding:2px 4px;
+  border-radius:6px;
   font-size:var(--event-font);
-  border-radius:4px;
+  color:#fff;
   background: rgba(0,0,0,0.3);
   cursor:pointer;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
-.event:hover {
-  background: rgba(0,0,0,0.5);
-}
-.event .title {
-  text-align:left;
-}
-.event .time {
-  min-width:50px;
-  font-weight:600;
-  font-size:11px;
-}
+.event:hover { background: rgba(0,0,0,0.5); }
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
-.event.more {
-  font-size:12px;
-  color:var(--muted);
-  padding-left:6px;
-}
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
-/* Popup */
+
 #popup {
   position:fixed;
   top:50%;
@@ -168,7 +139,7 @@ header button:hover{
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
-/* Responsive */
+
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
@@ -181,7 +152,7 @@ header button:hover{
     <button id="next-week">&gt;</button>
   </header>
 
-  <div class="calendar" id="calendar-root">
+  <div class="calendar">
     <div class="grid" id="grid"></div>
   </div>
 </div>
@@ -193,7 +164,7 @@ header button:hover{
 </div>
 
 <script>
-// ---------------- CONFIG ----------------
+// CONFIG
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', label:'Réception', css:'c-reception'},
@@ -201,14 +172,14 @@ const CALENDARS = [
 ];
 const WEEKS = 4;
 
-// ---------------- HELPERS ----------------
-function fmtDate(d){return d.toISOString().split('T')[0];}
-function pad(n){return n<10?'0'+n:n;}
-function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
+// Helpers
+function fmtDate(d){ return d.toISOString().split('T')[0]; }
+function pad(n){ return n<10?'0'+n:n; }
+function fmtTime(dt){ if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes()); }
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// ---------------- GRID START ----------------
+// Navigation
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -221,27 +192,23 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
-// ---------------- POPUP ----------------
+// Popup
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  let text;
-  if(isAllDay) text='Toute la journée';
-  else text='Du '+start+' au '+end;
-  document.getElementById('popup-time').textContent=text;
+  document.getElementById('popup-time').textContent=isAllDay?'Toute la journée':'Du '+start+' au '+end;
   popup.style.display='block';
 }
 
-// ---------------- FETCH EVENTS ----------------
+// Fetch events
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
-  const base='https://www.googleapis.com/calendar/v3/calendars/';
-  const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
+  const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?key=${encodeURIComponent(API_KEY)}&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=2500`;
   const res=await fetch(url);
   if(!res.ok) throw new Error('HTTP '+res.status);
   return res.json();
 }
 
-// ---------------- BUILD DATES ----------------
+// Build dates array
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -254,7 +221,7 @@ function buildDates(start){
   return dates;
 }
 
-// ---------------- RENDER CALENDAR ----------------
+// Render calendar
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -262,6 +229,7 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
+
   dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
@@ -274,15 +242,16 @@ async function renderCalendar(){
   const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
 
   try{
-    const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString()).then(json=>({calendar:c,items:json.items||[]})).catch(err=>({calendar:c,error:err})));
-    const results=await Promise.all(promises);
+    const results = await Promise.all(CALENDARS.map(c=>{
+      return fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString())
+        .then(json=>({calendar:c,items:json.items||[]})).catch(err=>({calendar:c,error:err}));
+    }));
 
     const eventsByDay={};
     const seen=new Set();
 
     for(const res of results){
-      if(res.error){console.warn('Erreur API pour',res.calendar.id,res.error); continue;}
-      const cal=res.calendar;
+      if(res.error){ console.warn('Erreur API pour',res.calendar.id,res.error); continue; }
       for(const it of res.items){
         const dedupeKey=it.iCalUID||it.id||(it.summary+(it.start?.dateTime||it.start?.date));
         if(seen.has(dedupeKey)) continue;
@@ -298,18 +267,20 @@ async function renderCalendar(){
           for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
             const key=fmtDate(d);
             eventsByDay[key]=eventsByDay[key]||[];
-            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:cal.key});
+            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:res.calendar.key});
           }
-        }else{
-          const s=new Date(start); const e=end?new Date(end):null;
+        } else {
+          const s=new Date(start);
+          const e=end?new Date(end):null;
           const dayKey=fmtDate(s);
           eventsByDay[dayKey]=eventsByDay[dayKey]||[];
-          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:cal.key});
+          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:res.calendar.key});
         }
       }
     }
 
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    // Render events
+    for(const dayEl of document.querySelectorAll('.day')){
       const date=dayEl.dataset.date;
       const evList=eventsByDay[date]||[];
       const eventsContainer=dayEl.querySelector('.events');
@@ -346,7 +317,7 @@ async function renderCalendar(){
     }
 
     const todayStr=fmtDate(new Date());
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    for(const dayEl of document.querySelectorAll('.day')){
       const date=dayEl.dataset.date;
       dayEl.classList.remove('past','future','today');
       if(date===todayStr) dayEl.classList.add('today');
@@ -354,12 +325,10 @@ async function renderCalendar(){
       else dayEl.classList.add('future');
     }
 
-  }catch(err){
-    console.error('Erreur lors du chargement des événements :',err);
-  }
+  } catch(err){ console.error('Erreur lors du chargement des événements:',err); }
 }
 
-// ---------------- NAVIGATION ----------------
+// Navigation
 document.getElementById('prev-week').onclick=()=>{
   gridStartDate.setDate(gridStartDate.getDate()-7);
   renderCalendar();
@@ -369,11 +338,8 @@ document.getElementById('next-week').onclick=()=>{
   renderCalendar();
 };
 
-// ---------------- INITIAL RENDER ----------------
+// Initial render
 renderCalendar();
-
-// ---------------- AUTO REFRESH EVENTS ----------------
-setInterval(renderCalendar, 5*60*1000); // rafraîchissement toutes les 5 minutes
 </script>
 </body>
 </html>
