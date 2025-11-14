@@ -220,6 +220,25 @@ header h1{
   <h3 id="popup-title"></h3>
   <div id="popup-time"></div>
 </div>
+/* -------------------------------------------------
+   🔄 MISE À JOUR AUTOMATIQUE GOOGLE CALENDAR
+---------------------------------------------------*/
+
+// rafraîchissement toutes les 60 secondes
+const AUTO_REFRESH_INTERVAL = 60000; // 60 sec
+
+setInterval(() => {
+  console.log("⟳ Mise à jour automatique des événements Google Calendar…");
+  renderCalendar();
+}, AUTO_REFRESH_INTERVAL);
+
+// rafraîchissement intelligent si visibilité change
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    console.log("⟳ Onglet actif → mise à jour des événements");
+    renderCalendar();
+  }
+});
 
 <script>
 // CONFIG
