@@ -80,10 +80,13 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
 /* Jour actuel */
-@keyframes todayPulse {0%,100%{ transform: scale(1.08); } 50%{ transform: scale(1.12); }}
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
 .day.today {
   transform: scale(1.08);
   animation: todayPulse 3s infinite ease-in-out;
@@ -100,7 +103,10 @@ header h1{
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 /* Jour futur */
-@keyframes futurePulse {0%,100%{ transform: scale(1); } 50%{ transform: scale(1.02); }}
+@keyframes futurePulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
 .day.future {
   transform: scale(1);
   background:#1c1f23;
@@ -113,30 +119,19 @@ header h1{
   background:#0f1113;
   color:#555;
 }
-/* Hover et zoom */
 .day.today:hover {
   animation:none;
   transform: scale(1.18);
   z-index:10;
-  box-shadow:0 12px 40px rgba(0,229,255,0.6);
-  width:auto;
-  min-width:200px;
-  display:inline-block;
+  box-shadow: 0 12px 40px rgba(0,229,255,0.6);
 }
 .day.future:hover {
   animation:none;
   transform: scale(1.12);
   z-index:10;
   box-shadow:0 8px 20px rgba(0,229,255,0.3);
-  width:auto;
-  min-width:200px;
-  display:inline-block;
 }
-.day:hover .event .title {
-  white-space:nowrap;
-  overflow:visible;
-  text-overflow:clip;
-}
+.day:hover .event { white-space: normal; }
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -370,7 +365,7 @@ async function renderCalendar(){
       else dayEl.classList.add('future');
     }
 
-    // largeur adaptative pour zoom sur survol
+    // zoom largeur pour afficher titre complet
     document.querySelectorAll('.day.today, .day.future').forEach(day=>{
       day.addEventListener('mouseenter', e=>{
         const events = day.querySelectorAll('.event .title');
@@ -379,7 +374,8 @@ async function renderCalendar(){
           const w = ev.scrollWidth;
           if(w>maxWidth) maxWidth = w;
         });
-        day.style.width = maxWidth + 40 + 'px'; // marge pour padding
+        const maxAllowed = 250; // largeur max pour ne pas dépasser la grille
+        day.style.width = Math.min(maxWidth + 40, maxAllowed) + 'px'; 
       });
       day.addEventListener('mouseleave', e=>{
         day.style.width = '';
