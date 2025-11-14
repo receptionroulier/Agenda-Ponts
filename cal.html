@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Calendrier 4 semaines - halo & hover</title>
+<title>Calendrier 4 semaines encapsulé</title>
 <style>
 :root{
   --bg:#121212;
@@ -21,19 +21,212 @@ body{
   font-family:Inter, system-ui, Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
   padding:16px;
+  min-height:100vh;
   box-sizing:border-box;
 }
-.container{
-  max-width:1600px;
-  margin:0 auto;
+.calendar {
+  background: var(--card);
+  border-radius:12px;
+  padding:12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  width: 100%;
+  max-width:1200px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  position:relative;
 }
-header{
+.calendar header{
   display:flex;
   justify-content:center;
   align-items:center;
   margin-bottom:10px;
   gap:20px;
+}
+.calendar header button{
+  background:none;
+  border:none;
+  color:var(--accent);
+  font-size:20px;
+  cursor:pointer;
+  transition: background 0.2s;
+}
+.calendar header button:hover { background: rgba(0,229,255,0.2); }
+.calendar header h1{
+  margin:0;
+  font-size:24px;
+  color:var(--accent);
+}
+.grid {
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--gap);
+}
+.day {
+  background: #141619;
+  border-radius:12px;
+  height: calc((100vh - 100px)/4);
+  padding:12px;
+  box-sizing:border-box;
+  border:1px solid var(--border);
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+}
+.day:hover {
+  transform: scale(1.22);
+  z-index:10;
+  background-color:#23272c;
+  box-shadow:0 12px 40px rgba(0,0,0,0.45);
+  overflow:visible;
+}
+.day:hover .event { white-space: normal; }
+
+/* Jour actuel */
+.day.today {
+  transform: scale(1.08);
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
+}
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.3);
+}
+
+/* Past / Future */
+.day.past { transform: scale(0.95); background:#0f1113; color:#555; }
+.day.future { transform: scale(1); background:#1c1f23; color:#eaeaea; animation: pulse-future 4s ease-in-out infinite; }
+
+@keyframes pulse-future {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.03); }
+}
+
+.day-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:var(--days-font);
+  margin-bottom:2px;
+}
+.day .date { font-weight:600; font-size:var(--days-font); }
+
+.events {
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  overflow:hidden;
+}
+.event {
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 4px;
+  font-size:var(--event-font);
+  border-radius:6px;
+  background: rgba(0,0,0,0.3);
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.event:hover { background: rgba(0,0,0,0.5); }
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
+.event.allDay .time { display:none; }
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
+.event .title { text-align:left; }
+.c-reception { color:#109c53; }
+.c-smr { color:#5768cb; }
+
+/* Popup relatif au calendrier */
+#popup {
+  position: absolute;
+  top:50%;
+  left:50%;
+  transform: translate(-50%,-50%);
+  background:#1c1f23;
+  color:#fff;
+  padding:16px;
+  border-radius:12px;
+  box-shadow:0 0 20px rgba(0,0,0,0.8);
+  z-index:20;
+  max-width:90%;
+  min-width:300px;
+  display:none;
+}
+#popup h3 { margin-top:0; margin-bottom:8px; }
+#popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
+
+@media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+@media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
+</style>
+</head>
+<body>
+<div class="calendar" id="calendar-root">
+  <header>
+    <button id="prev-week">&lt;</button>
+    <h1 id="month-title">Mois</h1>
+    <button id="next-week">&gt;</button>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div id="popup">
+    <span class="close" onclick="document.getElementById('popup').style.display='none'">&times;</span>
+    <h3 id="popup-title"></h3>
+    <div id="popup-time"></div>
+  </div>
+</div>
+
+<script>
+// Configuration identique à avant
+const API_KEY = 'YOUR_API_KEY';
+const CALENDARS = [
+  { id:'receptionroulier@gmail.com', key:'reception', css:'c-reception'},
+  { id:'smr.programme@gmail.com', key:'smr', css:'c-smr'}
+];
+const WEEKS=4;
+
+function fmtDate(d){return d.toISOString().split('T')[0];}
+function pad(n){return n<10?'0'+n:n;}
+function fmtTime(dt){if(!dt)return''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
+function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
+function shortTitle(s,max=60){if(!s)return''; return s.length>max?s.slice(0,max-1)+'…':s; }
+
+let gridStartDate;
+function computeGridStart(referenceDate){
+  const today=new Date(referenceDate);
+  const day=today.getDay();
+  const mondayThisWeek=new Date(today);
+  mondayThisWeek.setDate(today.getDate()-((day+6)%7));
+  const mondayLastWeek=new Date(mondayThisWeek);
+  mondayLastWeek.setDate(mondayLastWeek.getDate()-7);
+  return mondayLastWeek;
+}
+gridStartDate=computeGridStart(new Date());
+
+function showPopup(title,start,end,isAllDay){
+  const popup=document.getElementById('popup');
+  document.getElementById('popup-title').textContent=title;
+  document.getElementById('popup-time').textContent=isAllDay?'Toute la journée':'Du '+start+' au '+end;
+  popup.style.display='block';
+}
+
+// Reste du script identique : fetch, buildDates, renderCalendar, navigation
+// ... tu peux réutiliser le script précédent en adaptant les sélecteurs (#grid, #popup)
+</script>
+</body>
+</html>
 }
 header button{
   background:none;
