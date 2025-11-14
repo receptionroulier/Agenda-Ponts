@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - personnalisé</title>
+<title>Calendrier 4 semaines - fixe</title>
 
 <style>
 :root{
@@ -62,22 +62,20 @@ header h1{
 }
 .day {
   background: #141619;
-  border-radius:10px;
-  padding:6px;
+  border-radius:12px;
+  height: calc((100vh - 100px)/4); /* hauteur fixe pour 4 semaines */
+  padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  min-height:calc((100vh - 100px)/4);
-  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease;
+  transition: transform 0.3s, background 0.3s, color 0.3s;
   position:relative;
 }
 .day.today {
-  transform: scale(1.05);
+  transform: scale(1.1);
   z-index:2;
   background-color: #1f2226;
-  box-shadow: 0 0 12px rgba(0,229,255,0.3);
+  box-shadow: 0 0 20px rgba(0,229,255,0.3);
 }
 .day.past {
   background-color: #0f1113;
@@ -95,48 +93,52 @@ header h1{
   font-size:var(--days-font);
   margin-bottom:6px;
 }
-.day .date { font-weight:600; font-size:14px; }
-.day .dow { font-weight:500; font-size:12px; }
-
+.day .date {
+  font-weight:600;
+  font-size:14px;
+}
 .events {
   display:flex;
   flex-direction:column;
   gap:2px;
-  overflow-y:auto;
-  max-height: calc( (100vh - 200px) / 4 );
+  overflow:hidden; /* plus de scroll */
 }
 .event {
   display:flex;
   gap:4px;
   align-items:center;
-  padding:2px 4px;
-  border-radius:4px;
+  padding:4px;
+  border-radius:6px;
   font-size:var(--event-font);
-  line-height:1;
+  line-height:1.05;
   color:#fff;
   background: rgba(0,0,0,0.3);
   cursor:pointer;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition: background 0.2s;
+  white-space: nowrap;  /* tout sur une ligne */
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
-.event:hover {
-  transform: scale(1.02);
-  background: rgba(0,0,0,0.5);
+.event:hover { background: rgba(0,0,0,0.5); }
+.event .time {
+  min-width:50px;
+  font-weight:600;
+  font-size:11px;
 }
-.event .time { min-width:40px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
-.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
+.event.more {
+  font-size:12px;
+  color:var(--muted);
+  padding-left:6px;
+}
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
-
 /* Popup */
 #popup {
   position:fixed;
   top:50%;
   left:50%;
-  transform:translate(-50%,-50%) scale(0.95);
+  transform:translate(-50%,-50%);
   background:#1c1f23;
   color:#fff;
   padding:16px;
@@ -146,16 +148,12 @@ header h1{
   display:none;
   max-width:90%;
   min-width:300px;
-  white-space:pre-line;
-  transition: transform 0.3s ease, opacity 0.3s ease;
 }
-#popup.show { transform:translate(-50%,-50%) scale(1); opacity:1; }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
-
-/* Responsive: une colonne si petit écran */
-@media(max-width:900px){ .grid { grid-template-columns: repeat(2, 1fr); } }
-@media(max-width:520px){ .grid { grid-template-columns: repeat(1, 1fr); } }
+/* Responsive */
+@media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+@media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
 </head>
 <body>
@@ -172,7 +170,7 @@ header h1{
 </div>
 
 <div id="popup">
-  <span class="close" onclick="document.getElementById('popup').classList.remove('show'); setTimeout(()=>{document.getElementById('popup').style.display='none';},300)">&times;</span>
+  <span class="close" onclick="document.getElementById('popup').style.display='none'">&times;</span>
   <h3 id="popup-title"></h3>
   <div id="popup-time"></div>
 </div>
@@ -181,8 +179,8 @@ header h1{
 // CONFIG
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
-  { id:'receptionroulier@gmail.com', key:'reception', css:'c-reception'},
-  { id:'smr.programme@gmail.com', key:'smr', css:'c-smr'}
+  { id:'receptionroulier@gmail.com', key:'reception', label:'Réception', css:'c-reception'},
+  { id:'smr.programme@gmail.com', key:'smr', label:'SMR', css:'c-smr'}
 ];
 const WEEKS = 4;
 
@@ -190,8 +188,8 @@ const WEEKS = 4;
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
-function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s; }
-function fmtPopupDate(dt){ const d=new Date(dt); const days=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam']; return days[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1); }
+function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
+function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
 // Variables de navigation
 let gridStartDate;
@@ -207,15 +205,14 @@ function computeGridStart(referenceDate){
 gridStartDate = computeGridStart(new Date());
 
 // popup
-function showPopup(title,start,end,allDay=false){
+function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  let txt='';
-  if(allDay){ txt='Toute la journée'; }
-  else{ txt='Du '+fmtPopupDate(start)+' > '+fmtTime(start)+'\nAu '+fmtPopupDate(end)+' > '+fmtTime(end); }
-  document.getElementById('popup-time').textContent=txt;
+  let text;
+  if(isAllDay) text='Toute la journée';
+  else text='Du '+start+' au '+end;
+  document.getElementById('popup-time').textContent=text;
   popup.style.display='block';
-  popup.classList.add('show');
 }
 
 // fetch events
@@ -316,9 +313,10 @@ async function renderCalendar(){
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
 
-        const timeText=ev.allDay?'':fmtTime(ev.start);
-        evEl.innerHTML=`<div class="time">${timeText}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-        evEl.onclick=()=>showPopup(ev.title,ev.start,ev.end,ev.allDay);
+        const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
+        const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
+        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
+        evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
 
@@ -330,7 +328,6 @@ async function renderCalendar(){
       }
     }
 
-    // style past/future/today
     const todayStr=fmtDate(new Date());
     for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
@@ -357,23 +354,6 @@ document.getElementById('next-week').onclick=()=>{
 
 // initial render
 renderCalendar();
-</script>
-  <script>
-// Fonction pour envoyer la hauteur totale du calendrier à l'iframe parente
-function sendHeight() {
-  const height = document.body.scrollHeight;
-  window.parent.postMessage({type: 'calendarHeight', height: height}, '*');
-}
-
-// Envoyer la hauteur initiale
-sendHeight();
-
-// Ré-envoyer la hauteur si la taille change (ex: navigation semaines)
-const observer = new MutationObserver(sendHeight);
-observer.observe(document.getElementById('grid'), {childList: true, subtree: true});
-
-// Aussi si la fenêtre redimensionne (responsive)
-window.addEventListener('resize', sendHeight);
 </script>
 </body>
 </html>
