@@ -16,7 +16,6 @@
   --days-font:14px;
   --event-font:14px;
 }
-
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
@@ -25,20 +24,18 @@ body{
   padding:16px;
   box-sizing:border-box;
 }
-
 .container{
   max-width:1600px;
   margin:0 auto;
 }
-
 header{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
+  gap:20px;
   flex-wrap:wrap;
 }
-
 header h1{
   margin:0;
   font-size:24px;
@@ -46,13 +43,11 @@ header h1{
   text-align:center;
   flex:1;
 }
-
 .nav-buttons{
   display:flex;
   gap:8px;
   align-items:center;
 }
-
 .nav-buttons button{
   background:none;
   border:none;
@@ -71,13 +66,11 @@ header h1{
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
 }
-
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
 }
-
 .day {
   background: #141619;
   border-radius:12px;
@@ -85,27 +78,29 @@ header h1{
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
-  overflow:hidden;
+  overflow: visible;
   position:relative;
   display:flex;
   flex-direction:column;
-  opacity:0;
   transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  opacity:0;
 }
-.day.show { opacity:1; }
+.day.fade-in {
+  animation: fadeIn 0.25s forwards;
+}
 
+/* Jour actuel */
 @keyframes todayPulse {
   0%,100%{ transform: scale(1.08); }
   50%{ transform: scale(1.12); }
 }
-
 .day.today {
+  transform: scale(1.08);
   animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
 }
-
 .day.today::after {
   content:"";
   position:absolute;
@@ -115,42 +110,40 @@ header h1{
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 
+/* Jour futur */
 @keyframes futurePulse {
   0%,100%{ transform: scale(1); }
   50%{ transform: scale(1.02); }
 }
-
 .day.future {
-  animation: futurePulse 3s infinite ease-in-out;
+  transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
+  animation: futurePulse 3s infinite ease-in-out;
 }
 
-.day.future::after {
+/* Jour passé */
+.day.past {
+  transform: scale(0.95);
+  background:#0f1113;
+  color:#555;
+}
+
+/* Zoom au survol pour jour actuel et futur */
+.day.today:hover,
+.day.future:hover {
+  z-index:10;
+}
+.day.future:hover::after{
   content:"";
   position:absolute;
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 16px 4px rgba(0,229,255,0);
-  transition: box-shadow 0.35s ease;
+  box-shadow:0 0 15px 5px rgba(0,229,255,0.3);
 }
 
-.day.future:hover::after {
-  box-shadow:0 0 16px 4px rgba(0,229,255,0.3);
-}
-
-.day.past {
-  background:#0f1113;
-  color:#555;
-}
-
-.day.today:hover,
-.day.future:hover {
-  transform: scale(1.12);
-  z-index:10;
-}
-
+/* Titles */
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -158,9 +151,7 @@ header h1{
   font-size:var(--days-font);
   margin-bottom:2px;
 }
-
 .day .date { font-weight:600; font-size:var(--days-font); }
-
 .events {
   flex:1 1 auto;
   display:flex;
@@ -168,7 +159,6 @@ header h1{
   gap:2px;
   overflow:hidden;
 }
-
 .event {
   display:flex;
   align-items:center;
@@ -183,9 +173,7 @@ header h1{
   text-overflow:ellipsis;
   transition: background 0.25s ease;
 }
-
 .event:hover { background: rgba(0,0,0,0.5); }
-
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
 .event.more { font-size:12px; color:var(--muted); padding-left:6px; }
@@ -208,9 +196,12 @@ header h1{
   min-width:300px;
   display:none;
 }
-
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
+
+@keyframes fadeIn {
+  to { opacity:1; }
+}
 
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
@@ -298,12 +289,13 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-  dates.forEach(d=>{
+  dates.forEach((d,i)=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
     dayEl.dataset.date=fmtDate(d);
     dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
     gridEl.appendChild(dayEl);
+    setTimeout(()=>dayEl.classList.add('fade-in'), i*50);
   });
 
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
@@ -372,6 +364,17 @@ async function renderCalendar(){
         evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
+
+        // agrandissement dynamique si titre tronqué
+        evEl.addEventListener('mouseenter',()=>{
+          const titleDiv = evEl.querySelector('.title');
+          if(titleDiv.scrollWidth > titleDiv.clientWidth){
+            dayEl.style.width = Math.min(titleDiv.scrollWidth + 60, window.innerWidth*0.8)+'px';
+          }
+        });
+        evEl.addEventListener('mouseleave',()=>{
+          dayEl.style.width = '';
+        });
       }
 
       if(evList.length>MAX_PER_CELL){
@@ -383,17 +386,13 @@ async function renderCalendar(){
     }
 
     const todayStr=fmtDate(new Date());
-    const dayEls = Array.from(document.querySelectorAll('.day'));
-    dayEls.forEach((dayEl)=>{
+    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
       const date=dayEl.dataset.date;
       dayEl.classList.remove('past','future','today');
       if(date===todayStr) dayEl.classList.add('today');
       else if(date<todayStr) dayEl.classList.add('past');
       else dayEl.classList.add('future');
-    });
-
-    // Animation d'entrée
-    dayEls.forEach((dayEl, i) => setTimeout(()=>dayEl.classList.add('show'), i*50));
+    }
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
