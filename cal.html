@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Calendrier 4 semaines - complet</title>
 <style>
 :root{
@@ -41,25 +41,24 @@ header h1{
   text-align:center;
   flex:1;
 }
-header button{
-  background:none;
-  border:none;
-  color:var(--accent);
-  font-size:20px;
-  cursor:pointer;
-  transition: background 0.2s;
-}
-header button:hover{
-  background: rgba(0,229,255,0.2);
-  border-radius:4px;
-}
-header .right-controls{
+.right-controls{
   display:flex;
   gap:8px;
   align-items:center;
 }
-
-/* Calendrier */
+header button{
+  background:none;
+  border:none;
+  color:var(--accent);
+  font-size:16px;
+  cursor:pointer;
+  padding:4px 8px;
+  border-radius:4px;
+  transition: background 0.2s;
+}
+header button:hover{
+  background: rgba(0,229,255,0.2);
+}
 .calendar {
   background: var(--card);
   border-radius:12px;
@@ -83,9 +82,28 @@ header .right-controls{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s, height 0.35s;
+  transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s, height 0.35s, width 0.35s;
 }
-/* Past / Future */
+@keyframes pulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
+.day.today {
+  transform: scale(1.08);
+  animation: pulse 3s infinite ease-in-out;
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
+}
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.6);
+  transform: perspective(400px) rotateX(10deg);
+}
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
@@ -95,48 +113,30 @@ header .right-controls{
   transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
-  transition: transform 0.35s, height 0.35s;
+  transition: transform 0.35s, height 0.35s, width 0.35s;
 }
-.day.today {
-  transform: scale(1.08);
-  background:#1f2226;
-  border:2px solid var(--accent);
-  z-index:2;
-  box-shadow: 0 4px 20px rgba(0,229,255,0.5);
+.day.future:hover {
+  transform: scale(1.12);
+  z-index:10;
+  height: auto;
+  min-height: calc((100vh - 100px)/4);
 }
-
-/* Animation jour actuel */
-@keyframes pulse {
-  0%,100%{ transform: scale(1.08); }
-  50%{ transform: scale(1.12); }
-}
-.day.today {
-  animation: pulse 3s infinite ease-in-out;
-}
-.day.today::after {
+.day.future:hover::after {
   content:"";
   position:absolute;
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 30px 8px rgba(0,229,255,0.5);
-  transform: translateZ(0);
+  box-shadow:0 0 15px 5px rgba(0,229,255,0.3);
+  transform: perspective(200px) rotateX(5deg);
 }
-
-/* Hover */
-.day:hover.future,
-.day:hover.today {
-  transform: scale(1.22);
-  height:auto; /* s'agrandit si nécessaire pour le titre complet */
+/* hover jour actuel */
+.day.today:hover {
+  transform: scale(1.15);
   z-index:10;
-  background-color:#23272c;
-  box-shadow:0 12px 40px rgba(0,0,0,0.45);
+  height: auto;
+  min-height: calc((100vh - 100px)/4);
 }
-.day:hover.future::after,
-.day:hover.today::after {
-  box-shadow:0 0 25px 6px rgba(0,229,255,0.3);
-}
-
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -161,7 +161,7 @@ header .right-controls{
   border-radius:6px;
   background: rgba(0,0,0,0.3);
   cursor:pointer;
-  white-space:nowrap;
+  white-space: nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
@@ -198,14 +198,13 @@ header .right-controls{
 <body>
 <div class="container">
   <header>
-    <button id="prev-week">&lt;</button>
     <h1 id="month-title">Mois</h1>
     <div class="right-controls">
+      <button id="today-prev">&lt;</button>
       <button id="today-btn">Aujourd'hui</button>
-      <button id="next-week">&gt;</button>
+      <button id="today-next">&gt;</button>
     </div>
   </header>
-
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
   </div>
@@ -378,21 +377,13 @@ async function renderCalendar(){
 }
 
 // navigation
-document.getElementById('prev-week').onclick=()=>{
-  gridStartDate.setDate(gridStartDate.getDate()-7);
-  renderCalendar();
-};
-document.getElementById('next-week').onclick=()=>{
-  gridStartDate.setDate(gridStartDate.getDate()+7);
-  renderCalendar();
-};
-document.getElementById('today-btn').onclick=()=>{
-  gridStartDate = computeGridStart(new Date());
-  renderCalendar();
-};
+document.getElementById('today-prev').onclick = () => { gridStartDate.setDate(gridStartDate.getDate()-7); renderCalendar(); };
+document.getElementById('today-next').onclick = () => { gridStartDate.setDate(gridStartDate.getDate()+7); renderCalendar(); };
+document.getElementById('today-btn').onclick = () => { gridStartDate = computeGridStart(new Date()); renderCalendar(); };
 
 // initial render
 renderCalendar();
+// mise à jour auto toutes les minutes
 setInterval(renderCalendar,60000);
 </script>
 </body>
