@@ -33,6 +33,7 @@ header{
   justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
+  gap:20px;
   flex-wrap:wrap;
 }
 header h1{
@@ -40,7 +41,6 @@ header h1{
   font-size:24px;
   color:var(--accent);
   text-align:center;
-  flex:1;
 }
 .nav-buttons{
   display:flex;
@@ -124,6 +124,22 @@ header h1{
   color:#555;
 }
 
+/* Zoom au survol pour jour actuel et futur */
+.day.today:hover,
+.day.future:hover {
+  animation:none;
+  transform: scale(1.12);
+  z-index:10;
+  width: 140%;
+}
+
+/* Affichage titres sur une ligne */
+.day .event .title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow:ellipsis;
+}
+
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -132,7 +148,6 @@ header h1{
   margin-bottom:2px;
 }
 .day .date { font-weight:600; font-size:var(--days-font); }
-
 .events {
   flex:1 1 auto;
   display:flex;
@@ -206,7 +221,7 @@ header h1{
 </div>
 
 <script>
-const API_KEY = 'YOUR_API_KEY';
+const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', css:'c-reception'},
   { id:'smr.programme@gmail.com', key:'smr', css:'c-smr'}
@@ -358,22 +373,6 @@ async function renderCalendar(){
       else if(date<todayStr) dayEl.classList.add('past');
       else dayEl.classList.add('future');
     }
-
-    // Largeur dynamique pour titres
-    document.querySelectorAll('.day.today, .day.future').forEach(day=>{
-      day.addEventListener('mouseenter', ()=>{
-        const events = day.querySelectorAll('.event .title');
-        let maxWidth = 0;
-        events.forEach(t=>{
-          const style = getComputedStyle(t);
-          const w = t.scrollWidth + parseInt(style.paddingLeft) + parseInt(style.paddingRight) + 4;
-          if(w > maxWidth) maxWidth = w;
-        });
-        const gridWidth = day.parentElement.offsetWidth / 7;
-        day.style.width = Math.min(maxWidth, gridWidth*2) + 'px';
-      });
-      day.addEventListener('mouseleave', ()=> day.style.width='');
-    });
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
