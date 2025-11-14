@@ -16,6 +16,7 @@
   --days-font:14px;
   --event-font:14px;
 }
+
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
@@ -24,29 +25,34 @@ body{
   padding:16px;
   box-sizing:border-box;
 }
+
 .container{
   max-width:1600px;
   margin:0 auto;
 }
+
 header{
   display:flex;
   justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
-  gap:20px;
   flex-wrap:wrap;
 }
+
 header h1{
   margin:0;
   font-size:24px;
   color:var(--accent);
   text-align:center;
+  flex:1;
 }
+
 .nav-buttons{
   display:flex;
   gap:8px;
   align-items:center;
 }
+
 .nav-buttons button{
   background:none;
   border:none;
@@ -56,6 +62,7 @@ header h1{
   padding:4px 8px;
   transition: all 0.35s ease;
 }
+
 .nav-buttons button:hover { background: rgba(0,229,255,0.2); }
 
 .calendar {
@@ -65,11 +72,13 @@ header h1{
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
 }
+
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
 }
+
 .day {
   background: #141619;
   border-radius:12px;
@@ -96,14 +105,6 @@ header h1{
   border:2px solid var(--accent);
   z-index:2;
 }
-.day.today::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:12px;
-  pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
-}
 
 /* Jour futur */
 @keyframes futurePulse {
@@ -124,20 +125,32 @@ header h1{
   color:#555;
 }
 
-/* Zoom au survol pour jour actuel et futur */
+/* Zoom dynamique au survol pour jour actuel et futur */
 .day.today:hover,
 .day.future:hover {
   animation:none;
-  transform: scale(1.12);
   z-index:10;
-  width: 140%;
+  box-shadow: 0 8px 20px rgba(0,229,255,0.4);
 }
 
-/* Affichage titres sur une ligne */
-.day .event .title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow:ellipsis;
+/* Halo pour jour actuel */
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+}
+
+/* Halo pour jours futurs au survol */
+.day.future:hover::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 6px rgba(0,229,255,0.3);
 }
 
 .day-header{
@@ -148,6 +161,7 @@ header h1{
   margin-bottom:2px;
 }
 .day .date { font-weight:600; font-size:var(--days-font); }
+
 .events {
   flex:1 1 auto;
   display:flex;
@@ -155,6 +169,7 @@ header h1{
   gap:2px;
   overflow:hidden;
 }
+
 .event {
   display:flex;
   align-items:center;
@@ -169,11 +184,13 @@ header h1{
   text-overflow:ellipsis;
   transition: background 0.25s ease;
 }
+
 .event:hover { background: rgba(0,0,0,0.5); }
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
 .event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 .event .title { text-align:left; }
+
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
@@ -209,6 +226,7 @@ header h1{
       <button id="next-week">&gt;</button>
     </div>
   </header>
+
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
   </div>
@@ -228,12 +246,14 @@ const CALENDARS = [
 ];
 const WEEKS=4;
 
+// Utilitaires
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
+// Gestion dates du calendrier
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -246,6 +266,7 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
+// Popup événement
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
@@ -254,6 +275,7 @@ function showPopup(title,start,end,isAllDay){
   popup.style.display='block';
 }
 
+// API Google Calendar
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -262,6 +284,7 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
+// Génération des dates pour le calendrier
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -274,6 +297,7 @@ function buildDates(start){
   return dates;
 }
 
+// Rendu du calendrier
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -281,6 +305,7 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
+
   dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
@@ -352,7 +377,7 @@ async function renderCalendar(){
 
         const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
         const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
-        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
+        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${ev.title}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
@@ -362,6 +387,24 @@ async function renderCalendar(){
         moreEl.className='event more';
         moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
         eventsContainer.appendChild(moreEl);
+      }
+
+      // Zoom largeur dynamique
+      if(dayEl.classList.contains('today') || dayEl.classList.contains('future')){
+        dayEl.addEventListener('mouseenter',()=>{
+          let maxWidth = dayEl.offsetWidth;
+          const titles = dayEl.querySelectorAll('.event .title');
+          titles.forEach(t=>{
+            const w = t.scrollWidth + 16; // marge
+            if(w>maxWidth) maxWidth = Math.min(w, 300); // limite max largeur
+          });
+          if(maxWidth>dayEl.offsetWidth){
+            dayEl.style.width = maxWidth+'px';
+          }
+        });
+        dayEl.addEventListener('mouseleave',()=>{
+          dayEl.style.width='';
+        });
       }
     }
 
