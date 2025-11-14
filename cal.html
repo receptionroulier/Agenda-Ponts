@@ -30,22 +30,24 @@ body{
 }
 header{
   display:flex;
-  justify-content:center;
+  justify-content: space-between;
   align-items:center;
   margin-bottom:10px;
-  gap:20px;
   flex-wrap:wrap;
+  gap: 20px;
 }
 header h1{
   margin:0;
   font-size:24px;
   color:var(--accent);
   text-align:center;
+  flex:1;
 }
 .nav-buttons{
   display:flex;
   gap:8px;
   align-items:center;
+  margin-left:auto; /* boutons à droite */
 }
 .nav-buttons button{
   background:none;
@@ -96,6 +98,14 @@ header h1{
   border:2px solid var(--accent);
   z-index:2;
 }
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+}
 
 /* Jour futur */
 @keyframes futurePulse {
@@ -122,7 +132,7 @@ header h1{
   animation:none;
   transform: scale(1.12);
   z-index:10;
-  width: 140%;
+  width: 140%; /* largeur étendue si titre long */
   transition: transform 0.35s ease, width 0.35s ease;
 }
 
