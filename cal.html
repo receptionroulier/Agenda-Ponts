@@ -16,6 +16,7 @@
   --days-font:14px;
   --event-font:14px;
 }
+
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
@@ -24,10 +25,12 @@ body{
   padding:16px;
   box-sizing:border-box;
 }
+
 .container{
   max-width:1600px;
   margin:0 auto;
 }
+
 header{
   display:flex;
   justify-content:center;
@@ -36,18 +39,21 @@ header{
   gap:20px;
   flex-wrap:wrap;
 }
+
 header h1{
   margin:0;
   font-size:24px;
   color:var(--accent);
   text-align:center;
-  transition: color 0.3s ease;
+  transition: opacity 0.5s ease;
 }
+
 .nav-buttons{
   display:flex;
   gap:8px;
   align-items:center;
 }
+
 .nav-buttons button{
   background:none;
   border:none;
@@ -57,27 +63,32 @@ header h1{
   padding:4px 8px;
   transition: background 0.3s ease, transform 0.3s ease;
 }
-.nav-buttons button:hover { 
+
+.nav-buttons button:hover{
   background: rgba(0,229,255,0.2);
   transform: scale(1.05);
 }
+
 .calendar {
   background: var(--card);
   border-radius:12px;
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
+  opacity:0;
+  animation: fadeIn 0.5s forwards;
 }
+
+@keyframes fadeIn{
+  to{opacity:1;}
+}
+
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
-  opacity:0;
-  animation: fadeIn 0.5s forwards;
 }
-@keyframes fadeIn {
-  to { opacity:1; }
-}
+
 .day {
   background: #141619;
   border-radius:12px;
@@ -90,54 +101,57 @@ header h1{
   display:flex;
   flex-direction:column;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
+  opacity:0;
+  animation: fadeIn 0.5s forwards;
 }
 
-/* Jour actuel */
-@keyframes todayPulse {
-  0%,100%{ transform: scale(1.08); }
-  50%{ transform: scale(1.12); }
-}
-.day.today {
-  animation: todayPulse 3s infinite ease-in-out;
-  background:#1f2226;
-  border:2px solid var(--accent);
-  z-index:2;
-}
-.day.today::after {
+.day.today::after,
+.day.future::after{
   content:"";
   position:absolute;
   inset:0;
   border-radius:12px;
   pointer-events:none;
+}
+
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
+
+.day.today {
+  animation: todayPulse 3s infinite ease-in-out;
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 
-/* Jour futur */
 @keyframes futurePulse {
   0%,100%{ transform: scale(1); }
   50%{ transform: scale(1.02); }
 }
+
 .day.future {
   animation: futurePulse 3s infinite ease-in-out;
   background:#1c1f23;
   color:#eaeaea;
+  box-shadow:0 0 6px 2px rgba(0,229,255,0.2);
 }
 
-/* Jour passé */
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
   color:#555;
 }
 
-/* Hover smooth pour jour actuel et futurs */
 .day.today:hover, .day.future:hover{
-  transform: scale(1.12);
+  animation:none; /* stop pulse on hover */
+  transform: scale(1.18);
   z-index:10;
-  box-shadow:0 8px 20px rgba(0,229,255,0.3);
+  box-shadow:0 12px 40px rgba(0,229,255,0.6);
 }
 
-/* Contenu jour */
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -145,7 +159,9 @@ header h1{
   font-size:var(--days-font);
   margin-bottom:2px;
 }
+
 .day .date { font-weight:600; font-size:var(--days-font); }
+
 .events {
   flex:1 1 auto;
   display:flex;
@@ -153,6 +169,7 @@ header h1{
   gap:2px;
   overflow:hidden;
 }
+
 .event {
   display:flex;
   align-items:center;
@@ -165,8 +182,11 @@ header h1{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  transition: background 0.3s ease;
 }
+
 .event:hover { background: rgba(0,0,0,0.5); }
+
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
 .event.more { font-size:12px; color:var(--muted); padding-left:6px; }
@@ -347,10 +367,8 @@ async function renderCalendar(){
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
 
-        const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
-        const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
         evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
-        evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
+        evEl.onclick=()=>showPopup(ev.title,fmtPopupDate(ev.start),ev.end?fmtPopupDate(ev.end):fmtPopupDate(ev.start),ev.allDay);
         eventsContainer.appendChild(evEl);
       }
 
