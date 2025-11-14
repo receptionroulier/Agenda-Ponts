@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines</title>
+<title>Calendrier 4 semaines - sombre</title>
 <style>
 :root{
   --bg:#121212;
@@ -33,30 +33,30 @@ header{
   justify-content:center;
   align-items:center;
   margin-bottom:10px;
-  gap:10px;
+  gap:20px;
   flex-wrap:wrap;
 }
-header button{
+header h1{
+  margin:0;
+  font-size:24px;
+  color:var(--accent);
+  text-align:center;
+}
+.nav-buttons{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.nav-buttons button{
   background:none;
   border:none;
   color:var(--accent);
-  font-size:18px;
+  font-size:16px;
   cursor:pointer;
-  transition: background 0.2s;
   padding:4px 8px;
+  transition: background 0.2s;
 }
-header button:hover { background: rgba(0,229,255,0.2); border-radius:4px; }
-header #today-btn{
-  margin-left:10px;
-  font-weight:bold;
-}
-header h1{
-  margin:0 20px;
-  font-size:24px;
-  color:var(--accent);
-  flex:1;
-  text-align:center;
-}
+.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
 .calendar {
   background: var(--card);
   border-radius:12px;
@@ -72,22 +72,74 @@ header h1{
 .day {
   background: #141619;
   border-radius:12px;
-  height: calc((100vh - 100px)/4);
-  padding:8px;
+  height: calc((100vh - 150px)/4);
+  padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
   overflow:hidden;
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, height 0.35s, width 0.35s;
+  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
+/* Jour actuel */
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
+.day.today {
+  transform: scale(1.08);
+  animation: todayPulse 3s infinite ease-in-out;
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
+}
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+}
+/* Jour futur */
+@keyframes futurePulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
+.day.future {
+  transform: scale(1);
+  background:#1c1f23;
+  color:#eaeaea;
+  animation: futurePulse 3s infinite ease-in-out;
+}
+/* Jour passé */
+.day.past {
+  transform: scale(0.95);
+  background:#0f1113;
+  color:#555;
+}
+.day.today:hover {
+  animation:none;
+  transform: scale(1.18);
+  height:auto;
+  z-index:10;
+  box-shadow: 0 12px 40px rgba(0,229,255,0.6);
+}
+.day.future:hover {
+  animation:none;
+  transform: scale(1.12);
+  z-index:10;
+  height:auto;
+  box-shadow:0 8px 20px rgba(0,229,255,0.3);
+}
+.day:hover .event { white-space: normal; }
 .day-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
   font-size:var(--days-font);
-  margin-bottom:4px;
+  margin-bottom:2px;
 }
 .day .date { font-weight:600; font-size:var(--days-font); }
 .events {
@@ -118,7 +170,6 @@ header h1{
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
-/* Popup */
 #popup {
   position: fixed;
   top:50%;
@@ -137,58 +188,6 @@ header h1{
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
 
-/* Jour passé */
-.day.past { transform: scale(0.95); background:#0f1113; color:#555; }
-/* Jour actuel */
-@keyframes todayPulse {0%,100%{transform: scale(1.08);}50%{transform: scale(1.12);}}
-.day.today {
-  transform: scale(1.08);
-  animation: todayPulse 3s infinite ease-in-out;
-  background:#1f2226;
-  border:2px solid var(--accent);
-  z-index:2;
-}
-.day.today::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:12px;
-  pointer-events:none;
-  box-shadow:0 0 25px 10px rgba(0,229,255,0.4);
-  transform: perspective(200px) rotateX(5deg);
-}
-/* Jour futur */
-@keyframes futurePulse {0%,100%{transform: scale(1);}50%{transform: scale(1.03);}}
-.day.future {
-  transform: scale(1);
-  background:#1c1f23;
-  color:#eaeaea;
-  animation: futurePulse 3s infinite ease-in-out;
-}
-.day.future:hover {
-  transform: scale(1.12);
-  z-index:10;
-  height:auto;
-}
-.day.future:hover::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:12px;
-  pointer-events:none;
-  box-shadow:0 0 15px 5px rgba(0,229,255,0.3);
-  transform: perspective(150px) rotateX(5deg);
-}
-/* Hover jour actuel */
-.day.today:hover {
-  transform: scale(1.18);
-  height:auto;
-}
-.day.today:hover::after {
-  box-shadow:0 0 25px 15px rgba(0,229,255,0.5);
-  transform: perspective(200px) rotateX(5deg);
-}
-
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
@@ -197,9 +196,11 @@ header h1{
 <div class="container">
   <header>
     <h1 id="month-title">Mois</h1>
-    <button id="prev-week">&lt;</button>
-    <button id="today-btn">Aujourd'hui</button>
-    <button id="next-week">&gt;</button>
+    <div class="nav-buttons">
+      <button id="prev-week">&lt;</button>
+      <button id="today-btn">Aujourd'hui</button>
+      <button id="next-week">&gt;</button>
+    </div>
   </header>
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
@@ -226,7 +227,6 @@ function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHo
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// navigation
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -373,18 +373,9 @@ async function renderCalendar(){
 }
 
 // navigation
-document.getElementById('prev-week').onclick=()=>{
-  gridStartDate.setDate(gridStartDate.getDate()-7);
-  renderCalendar();
-};
-document.getElementById('next-week').onclick=()=>{
-  gridStartDate.setDate(gridStartDate.getDate()+7);
-  renderCalendar();
-};
-document.getElementById('today-btn').onclick=()=>{
-  gridStartDate=computeGridStart(new Date());
-  renderCalendar();
-};
+document.getElementById('prev-week').onclick=()=>{ gridStartDate.setDate(gridStartDate.getDate()-7); renderCalendar(); };
+document.getElementById('next-week').onclick=()=>{ gridStartDate.setDate(gridStartDate.getDate()+7); renderCalendar(); };
+document.getElementById('today-btn').onclick=()=>{ gridStartDate = computeGridStart(new Date()); renderCalendar(); };
 
 // initial render
 renderCalendar();
