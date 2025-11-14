@@ -154,6 +154,29 @@ header h1{
 /* Responsive */
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
+  /* --- Alignement des titres près de l’heure --- */
+.event {
+  justify-content: flex-start;
+}
+
+.event .title {
+  text-align: left;
+}
+
+
+/* --- Agrandir toute la cellule au survol --- */
+.day {
+  overflow: visible !important; /* autorise la cellule à sortir du cadre */
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transform-origin: center;
+}
+
+.day:hover {
+  transform: scale(1.15);       /* agrandissement de la CASE ENTIÈRE */
+  z-index: 50;                  /* passe devant les autres cellules */
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+}
+
 </style>
 </head>
 <body>
