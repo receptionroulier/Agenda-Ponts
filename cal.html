@@ -17,6 +17,7 @@
   --event-font: 13px;
 }
 
+/* ---------------- BODY ---------------- */
 body {
   margin: 0;
   padding: 16px;
@@ -26,11 +27,13 @@ body {
   box-sizing: border-box;
 }
 
+/* ---------------- CONTAINER ---------------- */
 .container {
   max-width: 1600px;
   margin: 0 auto;
 }
 
+/* ---------------- HEADER ---------------- */
 header {
   display: flex;
   justify-content: center;
@@ -61,6 +64,7 @@ header button:hover {
   background: rgba(0,229,255,0.2);
 }
 
+/* ---------------- CALENDAR ---------------- */
 .calendar {
   background: var(--card);
   border-radius: 12px;
@@ -69,22 +73,23 @@ header button:hover {
   width: 100%;
 }
 
+/* ---------------- GRID ---------------- */
 .grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
 }
 
-/* ----------------- CASE JOUR ----------------- */
+/* ---------------- DAY CELL ---------------- */
 .day {
-  height: calc((100vh - 100px)/4); /* fixe pour 4 semaines */
-  display: flex;
-  flex-direction: column;
+  height: calc((100vh - 100px)/4); /* fixe 4 semaines */
   padding: 8px;
   box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #141619;
+  display: flex;
+  flex-direction: column;
   overflow: hidden; /* empêche la cellule de s'étendre */
   transition: transform 0.35s, background-color 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
@@ -100,7 +105,7 @@ header button:hover {
 .day.past { background-color: #0f1113; color:#555; }
 .day.future { background-color: #1c1f23; color:#eaeaea; }
 
-/* ----------------- EN-TETE DU JOUR ----------------- */
+/* ---------------- DAY HEADER ---------------- */
 .day-header {
   display: flex;
   justify-content: space-between;
@@ -111,7 +116,7 @@ header button:hover {
 
 .date { font-weight:600; font-size: var(--days-font); }
 
-/* ----------------- ÉVÉNEMENTS ----------------- */
+/* ---------------- EVENTS ---------------- */
 .events {
   flex: 1 1 auto;
   display: flex;
@@ -133,8 +138,6 @@ header button:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   justify-content: flex-start;
-  max-width: 100%;
-  box-sizing: border-box;
 }
 
 .event:hover { background: rgba(0,0,0,0.5); }
@@ -147,7 +150,7 @@ header button:hover {
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
-/* ----------------- POPUP ----------------- */
+/* ---------------- POPUP ---------------- */
 #popup {
   position: fixed;
   top:50%; left:50%;
@@ -165,7 +168,7 @@ header button:hover {
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
 
-/* ----------------- RESPONSIVE ----------------- */
+/* ---------------- RESPONSIVE ---------------- */
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
@@ -194,7 +197,7 @@ header button:hover {
 </div>
 
 <script>
-// ----------------- CONFIG -----------------
+// ---------------- CONFIG -----------------
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', label:'Réception', css:'c-reception'},
@@ -208,7 +211,7 @@ function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHo
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// ----------------- NAVIGATION -----------------
+// ---------------- NAVIGATION -----------------
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -221,7 +224,7 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
-// ----------------- POPUP -----------------
+// ---------------- POPUP -----------------
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
@@ -230,7 +233,7 @@ function showPopup(title,start,end,isAllDay){
   popup.style.display='block';
 }
 
-// ----------------- FETCH EVENTS -----------------
+// ---------------- FETCH EVENTS -----------------
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -239,7 +242,7 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-// ----------------- BUILD DATES -----------------
+// ---------------- BUILD DATES -----------------
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -252,7 +255,7 @@ function buildDates(start){
   return dates;
 }
 
-// ----------------- RENDER CALENDAR -----------------
+// ---------------- RENDER CALENDAR -----------------
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -369,7 +372,7 @@ async function renderCalendar(){
   }
 }
 
-// ----------------- NAVIGATION ET BOUTONS -----------------
+// ---------------- NAVIGATION -----------------
 document.getElementById('prev-week').onclick = ()=>{
   gridStartDate.setDate(gridStartDate.getDate()-7);
   renderCalendar();
@@ -384,4 +387,14 @@ document.getElementById('btn-today').onclick = ()=>{
 };
 document.getElementById('btn-fullscreen').onclick = ()=>{
   if (!document.fullscreenElement) {
-    document.
+    document.documentElement.requestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+};
+
+// ---------------- INITIAL RENDER -----------------
+renderCalendar();
+</script>
+</body>
+</html>
