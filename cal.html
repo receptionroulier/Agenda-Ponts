@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - sombre</title>
+<title>Calendrier 4 semaines - Google Events</title>
 <style>
 :root{
   --bg:#121212;
@@ -34,29 +34,30 @@ header{
   align-items:center;
   margin-bottom:10px;
   gap:20px;
-  flex-wrap:wrap;
 }
+header button{
+  background:none;
+  border:none;
+  color:var(--accent);
+  font-size:20px;
+  cursor:pointer;
+  transition: background 0.2s;
+}
+header button:hover { background: rgba(0,229,255,0.2); }
 header h1{
   margin:0;
   font-size:24px;
   color:var(--accent);
+  flex:1;
   text-align:center;
 }
-.nav-buttons{
+.nav-right{
   display:flex;
-  gap:8px;
+  gap:10px;
   align-items:center;
 }
-.nav-buttons button{
-  background:none;
-  border:none;
-  color:var(--accent);
-  font-size:16px;
-  cursor:pointer;
-  padding:4px 8px;
-  transition: background 0.2s;
-}
-.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
+
+/* Calendrier */
 .calendar {
   background: var(--card);
   border-radius:12px;
@@ -72,7 +73,7 @@ header h1{
 .day {
   background: #141619;
   border-radius:12px;
-  height: calc((100vh - 150px)/4);
+  height: calc((100vh - 100px)/4);
   padding:12px;
   box-sizing:border-box;
   border:1px solid var(--border);
@@ -80,19 +81,23 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
+
+/* Jour passé */
+.day.past { 
+  transform: scale(0.95); 
+  background:#0f1113; 
+  color:#555; 
+}
+
 /* Jour actuel */
-@keyframes todayPulse {
-  0%,100%{ transform: scale(1.08); }
-  50%{ transform: scale(1.12); }
-}
 .day.today {
-  transform: scale(1.08);
-  animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
+  transform: scaleX(1.08);
+  box-shadow: 0 0 20px 8px rgba(0,229,255,0.4);
 }
 .day.today::after {
   content:"";
@@ -100,40 +105,28 @@ header h1{
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+  box-shadow:0 0 30px 12px rgba(0,229,255,0.5);
 }
+
 /* Jour futur */
-@keyframes futurePulse {
-  0%,100%{ transform: scale(1); }
-  50%{ transform: scale(1.02); }
-}
 .day.future {
-  transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
-  animation: futurePulse 3s infinite ease-in-out;
 }
-/* Jour passé */
-.day.past {
-  transform: scale(0.95);
-  background:#0f1113;
-  color:#555;
-}
+
+/* Hover */
 .day.today:hover {
-  animation:none;
-  transform: scale(1.18);
-  height:auto;
-  z-index:10;
+  transform: scaleX(1.2);
   box-shadow: 0 12px 40px rgba(0,229,255,0.6);
+  z-index:10;
 }
 .day.future:hover {
-  animation:none;
-  transform: scale(1.12);
+  transform: scaleX(1.12);
+  box-shadow: 0 8px 20px rgba(0,229,255,0.3);
   z-index:10;
-  height:auto;
-  box-shadow:0 8px 20px rgba(0,229,255,0.3);
 }
-.day:hover .event { white-space: normal; }
+
+/* Day content */
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -142,6 +135,7 @@ header h1{
   margin-bottom:2px;
 }
 .day .date { font-weight:600; font-size:var(--days-font); }
+
 .events {
   flex:1 1 auto;
   display:flex;
@@ -170,6 +164,7 @@ header h1{
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
+/* Popup */
 #popup {
   position: fixed;
   top:50%;
@@ -196,7 +191,7 @@ header h1{
 <div class="container">
   <header>
     <h1 id="month-title">Mois</h1>
-    <div class="nav-buttons">
+    <div class="nav-right">
       <button id="prev-week">&lt;</button>
       <button id="today-btn">Aujourd'hui</button>
       <button id="next-week">&gt;</button>
@@ -221,12 +216,14 @@ const CALENDARS = [
 ];
 const WEEKS=4;
 
+// Utilitaires
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
+// navigation
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -373,12 +370,22 @@ async function renderCalendar(){
 }
 
 // navigation
-document.getElementById('prev-week').onclick=()=>{ gridStartDate.setDate(gridStartDate.getDate()-7); renderCalendar(); };
-document.getElementById('next-week').onclick=()=>{ gridStartDate.setDate(gridStartDate.getDate()+7); renderCalendar(); };
-document.getElementById('today-btn').onclick=()=>{ gridStartDate = computeGridStart(new Date()); renderCalendar(); };
+document.getElementById('prev-week').onclick=()=>{
+  gridStartDate.setDate(gridStartDate.getDate()-7);
+  renderCalendar();
+};
+document.getElementById('next-week').onclick=()=>{
+  gridStartDate.setDate(gridStartDate.getDate()+7);
+  renderCalendar();
+};
+document.getElementById('today-btn').onclick=()=>{
+  gridStartDate = computeGridStart(new Date());
+  renderCalendar();
+};
 
 // initial render
 renderCalendar();
+// mise à jour auto toutes les minutes
 setInterval(renderCalendar,60000);
 </script>
 </body>
