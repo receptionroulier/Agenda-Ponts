@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Calendrier 4 semaines - compact fixe</title>
-
 <style>
 :root {
   --bg: #121212;
@@ -16,8 +15,6 @@
   --gap: 4px;
   --days-font: 14px;
   --event-font: 13px;
-  --compact-days-font: 14px;
-  --compact-event-font: 13px;
 }
 
 body {
@@ -78,32 +75,24 @@ header button:hover {
   gap: var(--gap);
 }
 
-/* ---------------------------------------------
-   CASE JOUR - FIXE
---------------------------------------------- */
+/* ----------------- CASE JOUR ----------------- */
 .day {
-  height: calc((100vh - 100px)/4);
+  height: calc((100vh - 100px)/4); /* fixe pour 4 semaines */
   display: flex;
   flex-direction: column;
-  padding: 12px;
+  padding: 8px;
   box-sizing: border-box;
-  overflow: hidden; /* empêche la cellule de s'agrandir */
-  position: relative;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #141619;
-  transition: transform 0.35s cubic-bezier(.25,.8,.25,1),
-              background-color 0.25s ease,
-              box-shadow 0.35s ease,
-              border-color 0.25s ease;
+  overflow: hidden; /* empêche la cellule de s'étendre */
+  transition: transform 0.35s, background-color 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
 
-/* Survol : zoom entier de la case, sans changer la police */
 .day:hover {
   transform: scale(1.22);
-  z-index: 60;
-  background-color: #23272c !important;
-  border-color: var(--accent);
+  z-index: 10;
+  background-color: #23272c;
   box-shadow: 0 12px 40px rgba(0,0,0,0.45);
 }
 
@@ -111,27 +100,23 @@ header button:hover {
 .day.past { background-color: #0f1113; color:#555; }
 .day.future { background-color: #1c1f23; color:#eaeaea; }
 
-/* ---------------------------------------------
-   EN-TETE DU JOUR
---------------------------------------------- */
+/* ----------------- EN-TETE DU JOUR ----------------- */
 .day-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: var(--compact-days-font);
-  margin-bottom: 0 !important; /* plus d'espace avec les événements */
+  font-size: var(--days-font);
+  margin-bottom: 2px;
 }
 
-.date { font-weight:600; font-size: var(--compact-days-font); }
+.date { font-weight:600; font-size: var(--days-font); }
 
-/* ---------------------------------------------
-   ÉVÉNEMENTS
---------------------------------------------- */
+/* ----------------- ÉVÉNEMENTS ----------------- */
 .events {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: 2px !important;
   overflow: hidden;
 }
 
@@ -139,10 +124,9 @@ header button:hover {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px;
-  border-radius: 6px;
-  font-size: var(--compact-event-font);
-  line-height: 1.1;
+  padding: 2px 4px;
+  font-size: 13px;
+  border-radius: 4px;
   background: rgba(0,0,0,0.3);
   cursor: pointer;
   white-space: nowrap;
@@ -163,9 +147,7 @@ header button:hover {
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
-/* ---------------------------------------------
-   POPUP
---------------------------------------------- */
+/* ----------------- POPUP ----------------- */
 #popup {
   position: fixed;
   top:50%; left:50%;
@@ -183,15 +165,12 @@ header button:hover {
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
 
-/* ---------------------------------------------
-   RESPONSIVE
---------------------------------------------- */
+/* ----------------- RESPONSIVE ----------------- */
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 </style>
 </head>
-
-<body class="compact">
+<body>
 <div class="container">
 
   <header>
@@ -215,9 +194,7 @@ header button:hover {
 </div>
 
 <script>
-// ---------------------------------------
-// CONFIG
-// ---------------------------------------
+// ----------------- CONFIG -----------------
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', label:'Réception', css:'c-reception'},
@@ -231,9 +208,7 @@ function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHo
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// ---------------------------------------
-// NAVIGATION
-// ---------------------------------------
+// ----------------- NAVIGATION -----------------
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -246,22 +221,16 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
-// ---------------------------------------
-// POPUP
-// ---------------------------------------
+// ----------------- POPUP -----------------
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
-  let text;
-  if(isAllDay) text='Toute la journée';
-  else text='Du '+start+' au '+end;
+  let text = isAllDay?'Toute la journée':'Du '+start+' au '+end;
   document.getElementById('popup-time').textContent=text;
   popup.style.display='block';
 }
 
-// ---------------------------------------
-// FETCH EVENTS
-// ---------------------------------------
+// ----------------- FETCH EVENTS -----------------
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -270,9 +239,7 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-// ---------------------------------------
-// BUILD DATES
-// ---------------------------------------
+// ----------------- BUILD DATES -----------------
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -285,9 +252,7 @@ function buildDates(start){
   return dates;
 }
 
-// ---------------------------------------
-// RENDER CALENDAR
-// ---------------------------------------
+// ----------------- RENDER CALENDAR -----------------
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -317,9 +282,106 @@ async function renderCalendar(){
     ).then(json=>({calendar:c,items:json.items||[]})).catch(err=>({calendar:c,error:err})));
 
     const results=await Promise.all(promises);
-
     const eventsByDay={};
     const seen=new Set();
 
     for(const res of results){
-      if(res.error){console.warn('Erreur API pour',
+      if(res.error){console.warn('Erreur API pour',res.calendar.id,res.error); continue;}
+      const cal=res.calendar;
+      for(const it of res.items){
+        const dedupeKey=it.iCalUID||it.id||(it.summary+(it.start?.dateTime||it.start?.date));
+        if(seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        let start=it.start?.dateTime||it.start?.date;
+        let end=it.end?.dateTime||it.end?.date;
+        const isAllDay=!!it.start?.date && !it.start?.dateTime;
+
+        if(isAllDay){
+          const s=new Date(start+'T00:00:00');
+          const e=new Date(end+'T00:00:00');
+          for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
+            const key=fmtDate(d);
+            eventsByDay[key]=eventsByDay[key]||[];
+            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:cal.key});
+          }
+        } else {
+          const s=new Date(start); const e=end?new Date(end):null;
+          const dayKey=fmtDate(s);
+          eventsByDay[dayKey]=eventsByDay[dayKey]||[];
+          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:cal.key});
+        }
+      }
+    }
+
+    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+      const date=dayEl.dataset.date;
+      const evList=eventsByDay[date]||[];
+      const eventsContainer=dayEl.querySelector('.events');
+      eventsContainer.innerHTML='';
+
+      evList.sort((a,b)=>{
+        if(a.allDay && !b.allDay) return -1;
+        if(!a.allDay && b.allDay) return 1;
+        if(a.allDay && b.allDay) return 0;
+        return new Date(a.start)-new Date(b.start);
+      });
+
+      const MAX_PER_CELL=6;
+      const show=evList.slice(0,MAX_PER_CELL);
+
+      for(const ev of show){
+        const evEl=document.createElement('div');
+        evEl.className='event '+(ev.allDay?'allDay':'');
+        const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
+        if(calMeta) evEl.classList.add(calMeta.css);
+
+        const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
+        const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
+
+        evEl.innerHTML=
+          `<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div>
+           <div class="title">${shortTitle(ev.title,80)}</div>`;
+
+        evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
+        eventsContainer.appendChild(evEl);
+      }
+
+      if(evList.length>MAX_PER_CELL){
+        const moreEl=document.createElement('div');
+        moreEl.className='event more';
+        moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
+        eventsContainer.appendChild(moreEl);
+      }
+    }
+
+    const todayStr=fmtDate(new Date());
+    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+      const date=dayEl.dataset.date;
+      dayEl.classList.remove('past','future','today');
+      if(date===todayStr) dayEl.classList.add('today');
+      else if(date<todayStr) dayEl.classList.add('past');
+      else dayEl.classList.add('future');
+    }
+
+  } catch(err){
+    console.error('Erreur lors du chargement des événements :',err);
+  }
+}
+
+// ----------------- NAVIGATION ET BOUTONS -----------------
+document.getElementById('prev-week').onclick = ()=>{
+  gridStartDate.setDate(gridStartDate.getDate()-7);
+  renderCalendar();
+};
+document.getElementById('next-week').onclick = ()=>{
+  gridStartDate.setDate(gridStartDate.getDate()+7);
+  renderCalendar();
+};
+document.getElementById('btn-today').onclick = ()=>{
+  gridStartDate = computeGridStart(new Date());
+  renderCalendar();
+};
+document.getElementById('btn-fullscreen').onclick = ()=>{
+  if (!document.fullscreenElement) {
+    document.
