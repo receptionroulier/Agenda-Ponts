@@ -54,9 +54,9 @@ header h1{
   font-size:16px;
   cursor:pointer;
   padding:4px 8px;
-  transition: background 0.3s, transform 0.3s;
+  transition: all 0.35s ease;
 }
-.nav-buttons button:hover { background: rgba(0,229,255,0.2); transform: scale(1.05); }
+.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
 
 .calendar {
   background: var(--card);
@@ -81,44 +81,8 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s ease, width 0.35s ease, box-shadow 0.35s ease;
+  transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
-.day-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:var(--days-font);
-  margin-bottom:2px;
-}
-.day .date { font-weight:600; font-size:var(--days-font); }
-.events {
-  flex:1 1 auto;
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  overflow:hidden;
-}
-.event {
-  display:flex;
-  align-items:center;
-  gap:4px;
-  padding:2px 4px;
-  font-size:var(--event-font);
-  border-radius:6px;
-  background: rgba(0,0,0,0.3);
-  cursor:pointer;
-  white-space: nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  transition: background 0.2s;
-}
-.event:hover { background: rgba(0,0,0,0.5); }
-.event .time { min-width:50px; font-weight:600; font-size:11px; }
-.event.allDay .time { display:none; }
-.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
-.event .title { text-align:left; }
-.c-reception { color:#109c53; }
-.c-smr { color:#5768cb; }
 
 /* Jour actuel */
 @keyframes todayPulse {
@@ -127,18 +91,10 @@ header h1{
 }
 .day.today {
   transform: scale(1.08);
+  animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
-  animation: todayPulse 3s infinite ease-in-out;
-}
-.day.today::after {
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:12px;
-  pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 
 /* Jour futur */
@@ -163,14 +119,56 @@ header h1{
 /* Zoom au survol pour jour actuel et futur */
 .day.today:hover,
 .day.future:hover {
-  animation: none;  /* arrête l'animation pulse */
-  transform: scale(1.18);
-  width: auto;
+  animation:none;
+  transform: scale(1.12);
   z-index:10;
-  box-shadow:0 12px 40px rgba(0,229,255,0.6);
+  width: 140%;
+  transition: transform 0.35s ease, width 0.35s ease;
 }
 
-/* Popup */
+.day:hover .event .title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow:ellipsis;
+}
+
+.day-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:var(--days-font);
+  margin-bottom:2px;
+}
+.day .date { font-weight:600; font-size:var(--days-font); }
+.events {
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  overflow:hidden;
+}
+.event {
+  display:flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 4px;
+  font-size:var(--event-font);
+  border-radius:6px;
+  background: rgba(0,0,0,0.3);
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  transition: background 0.25s ease;
+}
+.event:hover { background: rgba(0,0,0,0.5); }
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
+.event.allDay .time { display:none; }
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
+.event .title { text-align:left; }
+.c-reception { color:#109c53; }
+.c-smr { color:#5768cb; }
+
 #popup {
   position: fixed;
   top:50%;
