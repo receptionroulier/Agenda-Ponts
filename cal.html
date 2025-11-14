@@ -16,8 +16,6 @@
   --days-font:14px;
   --event-font:14px;
 }
-
-/* --- Base --- */
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
@@ -72,8 +70,6 @@ header h1{
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
 }
-
-/* --- Cases --- */
 .day {
   background: #141619;
   border-radius:12px;
@@ -85,22 +81,22 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
   opacity:0;
-  transform: translateY(20px);
+  transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
 }
-
-/* --- Animation d'entrée --- */
 .day.show {
-  animation: fadeInUp 0.35s forwards;
+  animation: fadeIn 0.35s forwards;
 }
-@keyframes fadeInUp {
-  0% { opacity:0; transform: translateY(20px); }
-  100% { opacity:1; transform: translateY(0); }
+@keyframes fadeIn {
+  0% { opacity:0; }
+  100% { opacity:1; }
 }
 
-/* --- Jour actuel --- */
-@keyframes todayPulse {0%,100%{ transform: scale(1.08); } 50%{ transform: scale(1.12); }}
+/* Jour actuel */
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
+}
 .day.today {
   transform: scale(1.08);
   animation: todayPulse 3s infinite ease-in-out;
@@ -117,39 +113,48 @@ header h1{
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 
-/* --- Jour futur --- */
-@keyframes futurePulse {0%,100%{ transform: scale(1); } 50%{ transform: scale(1.02); }}
+/* Jour futur */
+@keyframes futurePulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
 .day.future {
   transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
   animation: futurePulse 3s infinite ease-in-out;
 }
-.day.future:hover::after {
+.day.future::after {
   content:"";
   position:absolute;
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 6px rgba(0,229,255,0.3);
+  box-shadow:0 0 16px 4px rgba(0,229,255,0.3);
 }
 
-/* --- Jour passé --- */
+/* Jour passé */
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
   color:#555;
 }
 
-/* --- Zoom dynamique au survol --- */
+/* Zoom au survol pour jour actuel et futur */
 .day.today:hover,
 .day.future:hover {
   animation:none;
+  transform: scale(1.12);
   z-index:10;
-  box-shadow: 0 8px 20px rgba(0,229,255,0.4);
+  width:auto;
 }
 
-/* --- Contenu interne --- */
+.day:hover .event .title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow:ellipsis;
+}
+
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -158,7 +163,6 @@ header h1{
   margin-bottom:2px;
 }
 .day .date { font-weight:600; font-size:var(--days-font); }
-
 .events {
   flex:1 1 auto;
   display:flex;
@@ -185,7 +189,6 @@ header h1{
 .event.allDay .time { display:none; }
 .event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 .event .title { text-align:left; }
-
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
 
@@ -221,7 +224,6 @@ header h1{
       <button id="next-week">&gt;</button>
     </div>
   </header>
-
   <div class="calendar" id="calendar-root">
     <div class="grid" id="grid"></div>
   </div>
@@ -294,15 +296,12 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-
-  dates.forEach((d,i)=>{
+  dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
     dayEl.dataset.date=fmtDate(d);
     dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
     gridEl.appendChild(dayEl);
-    // Animation d'entrée avec délai
-    setTimeout(()=>dayEl.classList.add('show'), i*60);
   });
 
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
@@ -368,7 +367,7 @@ async function renderCalendar(){
 
         const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
         const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
-        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${ev.title}</div>`;
+        evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
@@ -379,34 +378,20 @@ async function renderCalendar(){
         moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
         eventsContainer.appendChild(moreEl);
       }
-
-      // Zoom largeur dynamique
-      if(dayEl.classList.contains('today') || dayEl.classList.contains('future')){
-        dayEl.addEventListener('mouseenter',()=>{
-          let maxWidth = dayEl.offsetWidth;
-          const titles = dayEl.querySelectorAll('.event .title');
-          titles.forEach(t=>{
-            const w = t.scrollWidth + 16; // marge
-            if(w>maxWidth) maxWidth = Math.min(w, 300); // limite max largeur
-          });
-          if(maxWidth>dayEl.offsetWidth){
-            dayEl.style.width = maxWidth+'px';
-          }
-        });
-        dayEl.addEventListener('mouseleave',()=>{
-          dayEl.style.width='';
-        });
-      }
     }
 
     const todayStr=fmtDate(new Date());
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
+    const dayEls = Array.from(document.querySelectorAll('.day'));
+    dayEls.forEach((dayEl)=>{
       const date=dayEl.dataset.date;
       dayEl.classList.remove('past','future','today');
       if(date===todayStr) dayEl.classList.add('today');
       else if(date<todayStr) dayEl.classList.add('past');
       else dayEl.classList.add('future');
-    }
+    });
+
+    // Animation d'entrée par case
+    dayEls.forEach((dayEl, i) => setTimeout(()=>dayEl.classList.add('show'), i*50));
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
