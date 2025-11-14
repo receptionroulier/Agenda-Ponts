@@ -41,6 +41,13 @@ header h1{
   font-size:24px;
   color:var(--accent);
   text-align:center;
+  opacity:0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+header h1.visible{
+  opacity:1;
+  transform: translateY(0);
 }
 .nav-buttons{
   display:flex;
@@ -54,15 +61,25 @@ header h1{
   font-size:16px;
   cursor:pointer;
   padding:4px 8px;
-  transition: background 0.2s;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
-.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
+.nav-buttons button:hover { 
+  background: rgba(0,229,255,0.2);
+  transform: scale(1.05);
+}
 .calendar {
   background: var(--card);
   border-radius:12px;
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
+  opacity:0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.calendar.visible{
+  opacity:1;
+  transform: translateY(0);
 }
 .grid {
   display:grid;
@@ -80,16 +97,9 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
-}
-/* Jour actuel */
-@keyframes todayPulse {
-  0%,100%{ transform: scale(1.08); }
-  50%{ transform: scale(1.12); }
+  transition: transform 0.35s ease, width 0.35s ease, background 0.25s ease, box-shadow 0.35s ease, border-color 0.25s ease, opacity 0.3s ease;
 }
 .day.today {
-  transform: scale(1.08);
-  animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
@@ -102,38 +112,15 @@ header h1{
   pointer-events:none;
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
-/* Jour futur */
-@keyframes futurePulse {
-  0%,100%{ transform: scale(1); }
-  50%{ transform: scale(1.02); }
-}
 .day.future {
-  transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
-  animation: futurePulse 3s infinite ease-in-out;
 }
-/* Jour passé */
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
   color:#555;
 }
-.day.today:hover {
-  animation:none;
-  transform: scale(1.18);
-  height:auto;
-  z-index:10;
-  box-shadow: 0 12px 40px rgba(0,229,255,0.6);
-}
-.day.future:hover {
-  animation:none;
-  transform: scale(1.12);
-  z-index:10;
-  height:auto;
-  box-shadow:0 8px 20px rgba(0,229,255,0.3);
-}
-.day:hover .event { white-space: normal; }
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -161,6 +148,7 @@ header h1{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+  transition: background 0.3s ease;
 }
 .event:hover { background: rgba(0,0,0,0.5); }
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
@@ -268,19 +256,16 @@ function buildDates(start){
 }
 
 async function renderCalendar(){
+  const calendarEl=document.getElementById('calendar-root');
+  calendarEl.classList.remove('visible');
+  document.getElementById('month-title').classList.remove('visible');
+
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
   document.getElementById('month-title').textContent=monthNames[dates[7].getMonth()]+' '+dates[7].getFullYear();
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-  dates.forEach(d=>{
-    const dayEl=document.createElement('div');
-    dayEl.className='day';
-    dayEl.dataset.date=fmtDate(d);
-    dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
-    gridEl.appendChild(dayEl);
-  });
 
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
   const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
@@ -322,19 +307,28 @@ async function renderCalendar(){
       }
     }
 
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-      const date=dayEl.dataset.date;
-      const evList=eventsByDay[date]||[];
-      const eventsContainer=dayEl.querySelector('.events');
-      eventsContainer.innerHTML='';
+    // création des cases
+    const todayStr=fmtDate(new Date());
+    dates.forEach(d=>{
+      const dayEl=document.createElement('div');
+      const dateStr=fmtDate(d);
+      dayEl.className='day';
+      dayEl.dataset.date=dateStr;
+      if(dateStr===todayStr) dayEl.classList.add('today');
+      else if(dateStr<todayStr) dayEl.classList.add('past');
+      else dayEl.classList.add('future');
 
+      dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
+      gridEl.appendChild(dayEl);
+
+      const eventsContainer=dayEl.querySelector('.events');
+      const evList=eventsByDay[dateStr]||[];
       evList.sort((a,b)=>{
         if(a.allDay && !b.allDay) return -1;
         if(!a.allDay && b.allDay) return 1;
         if(a.allDay && b.allDay) return 0;
         return new Date(a.start)-new Date(b.start);
       });
-
       const MAX_PER_CELL=6;
       const show=evList.slice(0,MAX_PER_CELL);
       for(const ev of show){
@@ -342,30 +336,47 @@ async function renderCalendar(){
         evEl.className='event '+(ev.allDay?'allDay':'');
         const calMeta=CALENDARS.find(c=>c.key===ev.calendarKey);
         if(calMeta) evEl.classList.add(calMeta.css);
-
         const timeText=ev.allDay?'Toute la journée':fmtPopupDate(ev.start)+' '+fmtTime(ev.start);
         const endText=ev.end?fmtPopupDate(ev.end)+' '+fmtTime(ev.end):timeText;
         evEl.innerHTML=`<div class="time">${ev.allDay?'':fmtTime(ev.start)}</div><div class="title">${shortTitle(ev.title,80)}</div>`;
         evEl.onclick=()=>showPopup(ev.title,timeText,endText,ev.allDay);
         eventsContainer.appendChild(evEl);
       }
-
       if(evList.length>MAX_PER_CELL){
         const moreEl=document.createElement('div');
         moreEl.className='event more';
         moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
         eventsContainer.appendChild(moreEl);
       }
-    }
 
-    const todayStr=fmtDate(new Date());
-    for(const dayEl of Array.from(document.querySelectorAll('.day'))){
-      const date=dayEl.dataset.date;
-      dayEl.classList.remove('past','future','today');
-      if(date===todayStr) dayEl.classList.add('today');
-      else if(date<todayStr) dayEl.classList.add('past');
-      else dayEl.classList.add('future');
-    }
+      // Zoom largeur uniquement pour jours actuels/futurs avec événements
+      if((dayEl.classList.contains('today') || dayEl.classList.contains('future')) && evList.length>0){
+        dayEl.addEventListener('mouseenter', ()=>{
+          let maxWidth=0;
+          dayEl.querySelectorAll('.event .title').forEach(titleEl=>{
+            const clone=titleEl.cloneNode(true);
+            clone.style.position='absolute';
+            clone.style.visibility='hidden';
+            clone.style.whiteSpace='nowrap';
+            document.body.appendChild(clone);
+            maxWidth=Math.max(maxWidth, clone.scrollWidth);
+            document.body.removeChild(clone);
+          });
+          const gridWidth = gridEl.clientWidth;
+          const cellWidth = Math.min(maxWidth+40, gridWidth/7 - 4);
+          dayEl.style.width=cellWidth+'px';
+          dayEl.style.transition='width 0.35s ease, transform 0.35s ease';
+          dayEl.style.transform='scale(1.12)';
+        });
+        dayEl.addEventListener('mouseleave', ()=>{
+          dayEl.style.width='';
+          dayEl.style.transform='';
+        });
+      }
+    });
+
+    calendarEl.classList.add('visible');
+    document.getElementById('month-title').classList.add('visible');
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
