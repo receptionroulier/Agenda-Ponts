@@ -3,48 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <title>Calendrier</title>
+
 <style>
-/* ========= VARIABLES ========= */
+/* ======================================
+   VARIABLES
+====================================== */
 :root {
+    --bg: #0e0f11;
     --card: #1a1c1f;
     --border: #2b2d31;
     --gap: 8px;
     --days-font: 14px;
     --muted: #7a7a7a;
-    --bg: #141619;
+    --text: #ffffff;
+    --accent: #00e5ff;
 }
 
-/* ========= GLOBAL ========= */
+/* ======================================
+   GLOBAL
+====================================== */
 body {
-    font-family: Arial, sans-serif;
-    background: #0e0f11;
-    color: white;
     margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, sans-serif;
     padding: 20px;
 }
 
-/* ========= HEADER ========= */
+/* ======================================
+   HEADER
+====================================== */
 header {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: var(--accent);
+    width: 220px;
+    text-align: center;
 }
 
 header button {
     background: #1f2226;
     border: 1px solid var(--border);
     color: white;
-    padding: 6px 12px;
+    padding: 8px 14px;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 16px;
 }
 
 header button:hover {
     background: rgba(0,229,255,0.2);
 }
 
-/* ========= CALENDAR CONTAINER ========= */
+/* ======================================
+   CALENDAR
+====================================== */
 .calendar {
     background: var(--card);
     border-radius: 12px;
@@ -52,14 +73,229 @@ header button:hover {
     box-shadow: 0 6px 18px rgba(0,0,0,0.5);
 }
 
-/* ========= GRID ========= */
+/* ======================================
+   GRID
+====================================== */
 .grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7,1fr);
     gap: var(--gap);
 }
 
-/* ========= DAY CELL ========= */
+/* ======================================
+   DAY CELL
+====================================== */
+.day {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #141619;
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    overflow: hidden;
+    transition: transform .35s, background-color .25s, box-shadow .35s;
+}
+
+/* Zoom selon jour */
+.day.today {
+    transform: scale(1.07);
+    background-color: #1f2226;
+    box-shadow: 0 0 10px rgba(0,229,255,0.25);
+}
+
+.day.past {
+    transform: scale(.95);
+    opacity: .65;
+}
+
+.day.future {
+    transform: scale(1);
+}
+
+/* Zoom dynamique au survol */
+.day:hover {
+    transform: scale(1.18);
+    background: #23272c;
+    z-index: 10;
+    overflow: visible;
+}
+
+/* ======================================
+   DAY HEADER
+====================================== */
+.day-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--days-font);
+}
+
+.date {
+    font-weight: 600;
+}
+
+/* ======================================
+   EVENTS
+====================================== */
+.events {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.event {
+    display: flex;
+    gap: 6px;
+    background: rgba(0,0,0,0.3);
+    padding: 2px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+}
+
+.event .time {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* couleurs */
+.c-reception { color: #10d672; }
+.c-smr { color: #7582ff; }
+.c-other { color: #ff9a34; }
+
+/* ======================================
+   RESPONSIVE
+====================================== */
+@media(max-width:900px){
+    .grid { grid-template-columns: repeat(2,1fr); }
+}
+@media(max-width:520px){
+    .grid { grid-template-columns: repeat(1,1fr); }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <button id="prevMonth">&lt;</button>
+    <h2 id="monthTitle"></h2>
+    <button id="nextMonth">&gt;</button>
+    <button id="todayBtn">Aujourd’hui</button>
+</header>
+
+<div class="calendar">
+    <div class="grid" id="calendarGrid"></div>
+</div>
+
+<script>
+/* ======================================================
+   ÉVÉNEMENTS
+====================================================== */
+const EVENTS = {
+    "2025-01-14": [
+        { time: "09:00", title: "Réception colis", type: "reception" },
+        { time: "14:00", title: "SMR Analyse", type: "smr" }
+    ],
+    "2025-01-18": [
+        { time: "10:00", title: "Rendez-vous client", type: "other" }
+    ],
+};
+
+/* ======================================================
+   OUTILS
+====================================================== */
+function fmt(date) {
+    return date.toISOString().split("T")[0];
+}
+
+let current = new Date();
+
+/* ======================================================
+   RENDU CALENDRIER
+====================================================== */
+function renderCalendar() {
+    const grid = document.getElementById("calendarGrid");
+    const title = document.getElementById("monthTitle");
+
+    grid.innerHTML = "";
+
+    const year = current.getFullYear();
+    const month = current.getMonth();
+
+    title.textContent = current.toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric"
+    });
+
+    const first = new Date(year, month, 1);
+    const startDay = (first.getDay() || 7);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    /* cases vides */
+    for(let i = 1; i < startDay; i++) {
+        grid.appendChild(document.createElement("div"));
+    }
+
+    /* jours */
+    for(let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        const key = fmt(date);
+
+        const cell = document.createElement("div");
+        cell.classList.add("day");
+
+        if (fmt(date) === fmt(today)) cell.classList.add("today");
+        else if (date < today) cell.classList.add("past");
+        else cell.classList.add("future");
+
+        cell.innerHTML = `
+            <div class="day-header">
+                <span class="date">${d}</span>
+            </div>
+            <div class="events"></div>
+        `;
+
+        const eventsBox = cell.querySelector(".events");
+
+        if (EVENTS[key]) {
+            EVENTS[key].forEach(ev => {
+                const div = document.createElement("div");
+                div.className = `event c-${ev.type}`;
+                div.innerHTML = `<span class="time">${ev.time}</span> ${ev.title}`;
+                eventsBox.appendChild(div);
+            });
+        }
+
+        grid.appendChild(cell);
+    }
+}
+
+/* ======================================================
+   NAVIGATION
+====================================================== */
+document.getElementById("prevMonth").onclick = () => {
+    current.setMonth(current.getMonth() - 1);
+    renderCalendar();
+};
+document.getElementById("nextMonth").onclick = () => {
+    current.setMonth(current.getMonth() + 1);
+    renderCalendar();
+};
+document.getElementById("todayBtn").onclick = () => {
+    current = new Date();
+    renderCalendar();
+};
+
+renderCalendar();
+</script>
+
+</body>
+</html>
 .day {
     height: calc((100vh - 120px) / 4);
     padding: 8px;
