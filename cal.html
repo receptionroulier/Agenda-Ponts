@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Calendrier 4 semaines - responsive</title>
 
 <style>
@@ -71,7 +71,7 @@ header h1{
   padding:8px;
   box-sizing:border-box;
   border:1px solid var(--border);
-  overflow:visible;
+  overflow: hidden;
   transition: transform 0.3s, background 0.3s, color 0.3s;
   position:relative;
   display: flex;
@@ -86,6 +86,13 @@ header h1{
 .day.past { background-color: #0f1113; color:#555; }
 .day.future { background-color: #1c1f23; color:#eaeaea; }
 
+/* Zoom au survol */
+.day:hover {
+  transform: scale(1.12);
+  z-index: 5;
+}
+
+/* Header du jour */
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -93,20 +100,21 @@ header h1{
   font-size:var(--days-font);
   margin-bottom:4px;
 }
-.day .date {
-  font-weight:600;
-  font-size:14px;
-}
+.day .date { font-weight:600; font-size:14px; }
+
+/* Events sur une ligne */
 .events {
   display:flex;
-  flex-direction:column;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap:2px;
-  overflow:visible;
+  overflow-x: hidden;
+  overflow-y: hidden;
   flex:1;
 }
 .event {
   display:flex;
-  gap:4px;
+  gap:2px;
   align-items:center;
   padding:2px 4px;
   border-radius:6px;
@@ -116,9 +124,10 @@ header h1{
   background: rgba(0,0,0,0.3);
   cursor:pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 .event:hover { background: rgba(0,0,0,0.5); }
-.event .time { min-width:50px; font-weight:600; font-size:11px; }
+.event .time { font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
 .event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 .c-reception { color:#109c53; }
@@ -350,4 +359,3 @@ renderCalendar();
 </script>
 </body>
 </html>
-
