@@ -17,6 +17,7 @@
   --event-font:14px;
 }
 
+/* --- Base --- */
 body{
   margin:0;
   font-family:Inter, system-ui, Arial, sans-serif;
@@ -25,12 +26,10 @@ body{
   padding:16px;
   box-sizing:border-box;
 }
-
 .container{
   max-width:1600px;
   margin:0 auto;
 }
-
 header{
   display:flex;
   justify-content:space-between;
@@ -38,7 +37,6 @@ header{
   margin-bottom:10px;
   flex-wrap:wrap;
 }
-
 header h1{
   margin:0;
   font-size:24px;
@@ -46,13 +44,11 @@ header h1{
   text-align:center;
   flex:1;
 }
-
 .nav-buttons{
   display:flex;
   gap:8px;
   align-items:center;
 }
-
 .nav-buttons button{
   background:none;
   border:none;
@@ -62,7 +58,6 @@ header h1{
   padding:4px 8px;
   transition: all 0.35s ease;
 }
-
 .nav-buttons button:hover { background: rgba(0,229,255,0.2); }
 
 .calendar {
@@ -72,13 +67,13 @@ header h1{
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
 }
-
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap: var(--gap);
 }
 
+/* --- Cases --- */
 .day {
   background: #141619;
   border-radius:12px;
@@ -91,13 +86,21 @@ header h1{
   display:flex;
   flex-direction:column;
   transition: transform 0.35s ease, width 0.35s ease, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+  opacity:0;
+  transform: translateY(20px);
 }
 
-/* Jour actuel */
-@keyframes todayPulse {
-  0%,100%{ transform: scale(1.08); }
-  50%{ transform: scale(1.12); }
+/* --- Animation d'entrée --- */
+.day.show {
+  animation: fadeInUp 0.35s forwards;
 }
+@keyframes fadeInUp {
+  0% { opacity:0; transform: translateY(20px); }
+  100% { opacity:1; transform: translateY(0); }
+}
+
+/* --- Jour actuel --- */
+@keyframes todayPulse {0%,100%{ transform: scale(1.08); } 50%{ transform: scale(1.12); }}
 .day.today {
   transform: scale(1.08);
   animation: todayPulse 3s infinite ease-in-out;
@@ -105,35 +108,6 @@ header h1{
   border:2px solid var(--accent);
   z-index:2;
 }
-
-/* Jour futur */
-@keyframes futurePulse {
-  0%,100%{ transform: scale(1); }
-  50%{ transform: scale(1.02); }
-}
-.day.future {
-  transform: scale(1);
-  background:#1c1f23;
-  color:#eaeaea;
-  animation: futurePulse 3s infinite ease-in-out;
-}
-
-/* Jour passé */
-.day.past {
-  transform: scale(0.95);
-  background:#0f1113;
-  color:#555;
-}
-
-/* Zoom dynamique au survol pour jour actuel et futur */
-.day.today:hover,
-.day.future:hover {
-  animation:none;
-  z-index:10;
-  box-shadow: 0 8px 20px rgba(0,229,255,0.4);
-}
-
-/* Halo pour jour actuel */
 .day.today::after {
   content:"";
   position:absolute;
@@ -143,7 +117,14 @@ header h1{
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
 
-/* Halo pour jours futurs au survol */
+/* --- Jour futur --- */
+@keyframes futurePulse {0%,100%{ transform: scale(1); } 50%{ transform: scale(1.02); }}
+.day.future {
+  transform: scale(1);
+  background:#1c1f23;
+  color:#eaeaea;
+  animation: futurePulse 3s infinite ease-in-out;
+}
 .day.future:hover::after {
   content:"";
   position:absolute;
@@ -153,6 +134,22 @@ header h1{
   box-shadow:0 0 20px 6px rgba(0,229,255,0.3);
 }
 
+/* --- Jour passé --- */
+.day.past {
+  transform: scale(0.95);
+  background:#0f1113;
+  color:#555;
+}
+
+/* --- Zoom dynamique au survol --- */
+.day.today:hover,
+.day.future:hover {
+  animation:none;
+  z-index:10;
+  box-shadow: 0 8px 20px rgba(0,229,255,0.4);
+}
+
+/* --- Contenu interne --- */
 .day-header{
   display:flex;
   justify-content:space-between;
@@ -169,7 +166,6 @@ header h1{
   gap:2px;
   overflow:hidden;
 }
-
 .event {
   display:flex;
   align-items:center;
@@ -184,7 +180,6 @@ header h1{
   text-overflow:ellipsis;
   transition: background 0.25s ease;
 }
-
 .event:hover { background: rgba(0,0,0,0.5); }
 .event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
@@ -246,14 +241,12 @@ const CALENDARS = [
 ];
 const WEEKS=4;
 
-// Utilitaires
 function fmtDate(d){return d.toISOString().split('T')[0];}
 function pad(n){return n<10?'0'+n:n;}
 function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHours())+':'+pad(d.getMinutes());}
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// Gestion dates du calendrier
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -266,7 +259,6 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
-// Popup événement
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
@@ -275,7 +267,6 @@ function showPopup(title,start,end,isAllDay){
   popup.style.display='block';
 }
 
-// API Google Calendar
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -284,7 +275,6 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
-// Génération des dates pour le calendrier
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -297,7 +287,6 @@ function buildDates(start){
   return dates;
 }
 
-// Rendu du calendrier
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -306,12 +295,14 @@ async function renderCalendar(){
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
 
-  dates.forEach(d=>{
+  dates.forEach((d,i)=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
     dayEl.dataset.date=fmtDate(d);
     dayEl.innerHTML=`<div class="day-header"><div class="dow">${['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()]}</div><div class="date">${d.getDate()}</div></div><div class="events"></div>`;
     gridEl.appendChild(dayEl);
+    // Animation d'entrée avec délai
+    setTimeout(()=>dayEl.classList.add('show'), i*60);
   });
 
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
