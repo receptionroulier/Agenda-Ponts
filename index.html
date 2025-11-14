@@ -23,7 +23,7 @@ html, body {
   height: 100vh;
 }
 
-/* === Colonne de gauche (ponts) === */
+/* === Colonne gauche === */
 .left {
   background: #252525;
   width: 15%;
@@ -44,7 +44,6 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: nowrap;
   gap: 5px;
   font-size: 1em;
 }
@@ -62,7 +61,7 @@ h2 {
   gap: 6px;
 }
 
-/* Cartes de ponts */
+/* Cartes ponts */
 .pont-card {
   background: #252525;
   border-radius: 8px;
@@ -104,7 +103,7 @@ h2 {
 .pont-etat { margin-bottom: 2px; }
 .pont-infos { color: #bbb; }
 
-/* === Colonne droite (calendrier intégré) === */
+/* === Colonne droite === */
 .right {
   background: #181818;
   flex: 1;
@@ -122,8 +121,8 @@ h2 {
   flex: 1;
   width: 100%;
   height: 100%;
-  border: none;       /* Pas de contour */
-  overflow: hidden;   /* Pas de scroll */
+  border: none;
+  overflow: hidden;
 }
 
 /* === Mobile === */
@@ -144,14 +143,15 @@ h2 {
 
   <div class="right">
     <div class="calendar-wrapper">
-      <iframe src="https://receptionroulier.github.io/Agenda-Ponts/cal.html"></iframe>
+      <iframe id="calendarFrame" src="https://receptionroulier.github.io/Agenda-Ponts/cal.html"></iframe>
     </div>
   </div>
 </div>
 
 <script>
-// === Countdown synchronisé avec fetchPonts ===
+/* === Countdown synchronisé avec fetchPonts === */
 let countdown = 5;
+
 function updateCountdown() {
   document.getElementById("countdown").textContent = countdown;
   countdown--;
@@ -162,16 +162,18 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 1000);
 
-// === Chargement des ponts HAROPA toutes les 5s avec tri et suppression doublons ===
+/* === Récupération + tri des ponts HAROPA === */
 async function fetchPonts() {
   try {
-    const url = encodeURIComponent('https://www.havre-port.com/map/getPonts');
+    const url = encodeURIComponent("https://www.havre-port.com/map/getPonts");
     const proxy = `https://api.allorigins.win/get?url=${url}`;
     const res = await fetch(proxy);
     const data = await res.json();
     const pontsJSON = JSON.parse(data.contents).data;
+
     let ponts = Object.values(pontsJSON);
 
+    /* Suppression doublons */
     const seen = new Set();
     ponts = ponts.filter(p => {
       if (seen.has(p.nom)) return false;
@@ -179,16 +181,24 @@ async function fetchPonts() {
       return true;
     });
 
-    const fermes = ponts.filter(p => !p.statutText.toLowerCase().includes('ouvert') && !p.statutText.includes('(Manoeuvre en cours)'));
-    const manoeuvre = ponts.filter(p => p.statutText.includes('(Manoeuvre en cours)'));
-    const ouverts = ponts.filter(p => p.statutText.toLowerCase().includes('ouvert'));
+    /* Détection précise des états */
+    const isOpen = p => /^ouvert/i.test(p.statutText.trim());
+    const isManoeuvre = p => p.statutText.includes("(Manoeuvre en cours)");
+
+    const fermes = ponts.filter(p => !isOpen(p) && !isManoeuvre(p));
+    const manoeuvre = ponts.filter(p => isManoeuvre(p));
+    const ouverts = ponts.filter(p => isOpen(p));
+
     const triPonts = [...fermes, ...manoeuvre, ...ouverts];
 
-    let html = '';
+    let html = "";
     triPonts.forEach(p => {
-      const ouvert = p.statutText.toLowerCase().includes('ouvert');
-      const isManoeuvre = p.statutText.includes('(Manoeuvre en cours)');
-      let classe = ouvert ? 'ouvert' : (!isManoeuvre ? 'ferme' : 'manoeuvre');
+      const classe = isManoeuvre(p)
+        ? "manoeuvre"
+        : isOpen(p)
+        ? "ouvert"
+        : "ferme";
+
       const infos = p.forceText ? p.forceText : `MàJ : ${p.date}`;
 
       html += `
@@ -199,15 +209,24 @@ async function fetchPonts() {
         </div>`;
     });
 
-    document.getElementById('ponts-table').innerHTML = html;
+    document.getElementById("ponts-table").innerHTML = html;
+
   } catch (err) {
-    console.error("Erreur lors de la récupération des ponts :", err);
-    document.getElementById('ponts-table').innerHTML = 'Impossible de récupérer les ponts.';
+    console.error("Erreur :", err);
+    document.getElementById("ponts-table").textContent =
+      "Impossible de récupérer les ponts.";
   }
 }
 
-// Premier chargement
+/* Première récupération */
 fetchPonts();
+
+/* ====== Mise à jour automatique de l’iframe calendrier ====== */
+/* Actualisation toutes les 60 secondes */
+setInterval(() => {
+  const iframe = document.getElementById("calendarFrame");
+  iframe.src = iframe.src.split("?")[0] + "?t=" + Date.now();
+}, 60000);
 </script>
 
 </body>
