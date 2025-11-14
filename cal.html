@@ -30,11 +30,10 @@ body{
 }
 header{
   display:flex;
-  justify-content: space-between;
+  justify-content:space-between;
   align-items:center;
   margin-bottom:10px;
   flex-wrap:wrap;
-  gap: 20px;
 }
 header h1{
   margin:0;
@@ -47,7 +46,6 @@ header h1{
   display:flex;
   gap:8px;
   align-items:center;
-  margin-left:auto; /* boutons à droite */
 }
 .nav-buttons button{
   background:none;
@@ -92,11 +90,11 @@ header h1{
   50%{ transform: scale(1.12); }
 }
 .day.today {
-  transform: scale(1.08);
+  transform: scale(1.1);
   animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
-  z-index:2;
+  z-index:3;
 }
 .day.today::after {
   content:"";
@@ -104,7 +102,7 @@ header h1{
   inset:0;
   border-radius:12px;
   pointer-events:none;
-  box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
+  box-shadow:0 0 25px 10px rgba(0,229,255,0.6);
 }
 
 /* Jour futur */
@@ -117,6 +115,14 @@ header h1{
   background:#1c1f23;
   color:#eaeaea;
   animation: futurePulse 3s infinite ease-in-out;
+}
+.day.future:hover::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 15px 5px rgba(0,229,255,0.4);
 }
 
 /* Jour passé */
@@ -132,10 +138,11 @@ header h1{
   animation:none;
   transform: scale(1.12);
   z-index:10;
-  width: 140%; /* largeur étendue si titre long */
+  width:auto;
+  min-width:100%;
+  max-width:200%;
   transition: transform 0.35s ease, width 0.35s ease;
 }
-
 .day:hover .event .title {
   white-space: nowrap;
   overflow: hidden;
@@ -375,6 +382,23 @@ async function renderCalendar(){
       else if(date<todayStr) dayEl.classList.add('past');
       else dayEl.classList.add('future');
     }
+
+    // zoom dynamique largeur selon titre
+    function adjustDayWidth(dayEl){
+      const events = dayEl.querySelectorAll('.event .title');
+      let maxWidth = 0;
+      events.forEach(t=>{
+        const w = t.scrollWidth + 24;
+        if(w > maxWidth) maxWidth = w;
+      });
+      if(maxWidth > dayEl.offsetWidth){
+        dayEl.style.width = Math.min(maxWidth, dayEl.offsetWidth*2)+'px';
+      }
+    }
+    document.querySelectorAll('.day.today, .day.future').forEach(day=>{
+      day.addEventListener('mouseenter', ()=> adjustDayWidth(day));
+      day.addEventListener('mouseleave', ()=> day.style.width='');
+    });
 
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
