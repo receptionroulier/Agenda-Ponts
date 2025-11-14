@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - fixe</title>
+<title>Calendrier 4 semaines - mode avancé</title>
 
 <style>
 /* -----------------------------------------------------------
-   🎨  VARIABLES GLOBALES
+   VARIABLES GLOBALES
 ----------------------------------------------------------- */
 :root {
   --bg: #121212;
@@ -19,10 +19,12 @@
   --gap: 4px;
   --days-font: 14px;
   --event-font: 13px;
+  --compact-days-font: 12px;
+  --compact-event-font: 11px;
 }
 
 /* -----------------------------------------------------------
-   🧱 LAYOUT GLOBAL
+   LAYOUT GLOBAL
 ----------------------------------------------------------- */
 body {
   margin: 0;
@@ -39,32 +41,40 @@ body {
 }
 
 /* -----------------------------------------------------------
-   🏷️  EN-TÊTE
+   EN-TÊTE + BOUTONS
 ----------------------------------------------------------- */
 header {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 10px;
-  gap: 20px;
-}
-
-header button {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 20px;
-  cursor: pointer;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 header h1 {
-  margin: 0;
+  margin: 0 10px;
   font-size: 24px;
   color: var(--accent);
 }
 
+header button {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+header button:hover {
+  background: rgba(0,229,255,0.2);
+}
+
 /* -----------------------------------------------------------
-   📅  CALENDRIER
+   CALENDRIER / GRILLE
 ----------------------------------------------------------- */
 .calendar {
   background: var(--card);
@@ -81,29 +91,26 @@ header h1 {
 }
 
 /* -----------------------------------------------------------
-   🗓️  CELLULE JOUR
+   CELLULE JOUR
 ----------------------------------------------------------- */
 .day {
   background: #141619;
   border-radius: 12px;
-  height: calc((100vh - 100px) / 4);
+  height: calc((100vh - 100px)/4);
   padding: 12px;
   border: 1px solid var(--border);
   box-sizing: border-box;
-
   overflow: visible !important;
-
   transition:
     transform 0.35s cubic-bezier(.25,.8,.25,1),
     background-color 0.25s ease,
     box-shadow 0.35s ease,
     border-color 0.25s ease;
-
   transform-origin: center;
   position: relative;
 }
 
-/* SURVOL — A+B+D */
+/* SURVOL */
 .day:hover {
   transform: scale(1.22);
   z-index: 60;
@@ -112,51 +119,31 @@ header h1 {
   box-shadow: 0 12px 40px rgba(0,0,0,0.45);
 }
 
-/* MOBILE — C */
+/* MOBILE SURVOL REDUIT */
 @media (max-width: 600px) {
-  .day:hover {
-    transform: scale(1.10);
-  }
+  .day:hover { transform: scale(1.10); }
 }
 
-/* ÉTATS */
-.day.today {
-  transform: scale(1.1);
-  background-color: #1f2226;
-  box-shadow: 0 0 20px rgba(0,229,255,0.3);
-  z-index: 2;
-}
-
-.day.past {
-  background-color: #0f1113;
-  color: #555;
-  transform: scale(0.95);
-}
-
-.day.future {
-  background-color: #1c1f23;
-  color: #eaeaea;
-}
+/* ETATS */
+.day.today { transform: scale(1.1); background-color: #1f2226; box-shadow: 0 0 20px rgba(0,229,255,0.3); z-index:2; }
+.day.past { background-color: #0f1113; color:#555; transform: scale(0.95); }
+.day.future { background-color: #1c1f23; color:#eaeaea; }
 
 /* -----------------------------------------------------------
-   🧭 EN-TÊTE DU JOUR
+   EN-TÊTE DU JOUR
 ----------------------------------------------------------- */
 .day-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: var(--days-font);
-
   margin-bottom: 0 !important;
 }
 
-.date {
-  font-weight: 600;
-  font-size: 14px;
-}
+.date { font-weight:600; font-size:14px; }
 
 /* -----------------------------------------------------------
-   📃 ÉVÉNEMENTS
+   ÉVÉNEMENTS
 ----------------------------------------------------------- */
 .events {
   display: flex;
@@ -175,82 +162,55 @@ header h1 {
   line-height: 1.05;
   background: rgba(0,0,0,0.3);
   cursor: pointer;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
   justify-content: flex-start;
 }
 
-.event:hover {
-  background: rgba(0,0,0,0.5);
-}
+.event:hover { background: rgba(0,0,0,0.5); }
 
-.event .title {
-  text-align: left;
-}
-
-.event .time {
-  min-width: 50px;
-  font-weight: 600;
-  font-size: 11px;
-}
-
-.event.allDay .time {
-  display: none;
-}
-
-.event.more {
-  font-size: 12px;
-  color: var(--muted);
-  padding-left: 6px;
-}
+.event .title { text-align: left; }
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
+.event.allDay .time { display:none; }
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 
 /* Couleurs agendas */
-.c-reception { color: #109c53; }
-.c-smr { color: #5768cb; }
+.c-reception { color:#109c53; }
+.c-smr { color:#5768cb; }
 
 /* -----------------------------------------------------------
    POPUP
 ----------------------------------------------------------- */
 #popup {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top:50%; left:50%;
+  transform: translate(-50%,-50%);
   background: #1c1f23;
-  color: #fff;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
-  z-index: 10;
-  max-width: 90%;
-  min-width: 300px;
-  display: none;
+  color:#fff;
+  padding:16px;
+  border-radius:12px;
+  box-shadow:0 0 20px rgba(0,0,0,0.8);
+  z-index:10;
+  max-width:90%;
+  min-width:300px;
+  display:none;
 }
-
-#popup h3 { margin: 0 0 8px 0; }
-
-#popup .close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
-}
+#popup h3 { margin-top:0; margin-bottom:8px; }
+#popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
 
 /* -----------------------------------------------------------
    RESPONSIVE
 ----------------------------------------------------------- */
-@media(max-width: 900px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
-}
+@media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+@media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
 
-@media(max-width: 520px) {
-  .grid { grid-template-columns: repeat(1, 1fr); }
-}
+/* -----------------------------------------------------------
+   MODE COMPACT
+----------------------------------------------------------- */
+body.compact .day { height: calc((100vh-60px)/4); }
+body.compact .day-header { font-size: var(--compact-days-font); }
+body.compact .event { font-size: var(--compact-event-font); }
 </style>
 </head>
 
@@ -261,6 +221,9 @@ header h1 {
     <button id="prev-week">&lt;</button>
     <h1 id="month-title">Mois</h1>
     <button id="next-week">&gt;</button>
+    <button id="btn-today">Aujourd’hui</button>
+    <button id="btn-compact">Compact</button>
+    <button id="btn-fullscreen">Plein écran</button>
   </header>
 
   <div class="calendar">
@@ -269,7 +232,6 @@ header h1 {
 
 </div>
 
-<!-- POPUP -->
 <div id="popup">
   <span class="close" onclick="document.getElementById('popup').style.display='none'">&times;</span>
   <h3 id="popup-title"></h3>
@@ -277,10 +239,9 @@ header h1 {
 </div>
 
 <script>
-/* TON JAVASCRIPT ORIGINAL ENTIER ET INTACT (aucune modification) */
-/* -------------------------------------------------------------- */
-/* Je le recopie intégralement sans rien toucher :               */
-
+// ---------------------------
+// CONFIG
+// ---------------------------
 const API_KEY = 'AIzaSyDkQkqPoOGf8umYg2dbeTU0THfLlJnCjXo';
 const CALENDARS = [
   { id:'receptionroulier@gmail.com', key:'reception', label:'Réception', css:'c-reception'},
@@ -294,6 +255,9 @@ function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHo
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
+// ---------------------------
+// VARIABLES DE NAVIGATION
+// ---------------------------
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -306,6 +270,9 @@ function computeGridStart(referenceDate){
 }
 gridStartDate = computeGridStart(new Date());
 
+// ---------------------------
+// POPUP
+// ---------------------------
 function showPopup(title,start,end,isAllDay){
   const popup=document.getElementById('popup');
   document.getElementById('popup-title').textContent=title;
@@ -316,6 +283,9 @@ function showPopup(title,start,end,isAllDay){
   popup.style.display='block';
 }
 
+// ---------------------------
+// FETCH EVENTS
+// ---------------------------
 async function fetchEventsForCalendar(calId,timeMin,timeMax){
   const base='https://www.googleapis.com/calendar/v3/calendars/';
   const url=base+encodeURIComponent(calId)+'/events?key='+encodeURIComponent(API_KEY)+'&timeMin='+encodeURIComponent(timeMin)+'&timeMax='+encodeURIComponent(timeMax)+'&singleEvents=true&orderBy=startTime&maxResults=2500';
@@ -324,6 +294,9 @@ async function fetchEventsForCalendar(calId,timeMin,timeMax){
   return res.json();
 }
 
+// ---------------------------
+// BUILD DATES
+// ---------------------------
 function buildDates(start){
   const dates=[];
   for(let w=0;w<WEEKS;w++){
@@ -336,6 +309,9 @@ function buildDates(start){
   return dates;
 }
 
+// ---------------------------
+// RENDER CALENDAR
+// ---------------------------
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -343,7 +319,6 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-
   dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
@@ -388,22 +363,13 @@ async function renderCalendar(){
           for(let d=new Date(s); d<e; d.setDate(d.getDate()+1)){
             const key=fmtDate(d);
             eventsByDay[key]=eventsByDay[key]||[];
-            eventsByDay[key].push({
-              title:it.summary||'(sans titre)',
-              start:null,end:null,allDay:true,calendarKey:cal.key
-            });
+            eventsByDay[key].push({title:it.summary||'(sans titre)',start:null,end:null,allDay:true,calendarKey:cal.key});
           }
         } else {
           const s=new Date(start); const e=end?new Date(end):null;
           const dayKey=fmtDate(s);
           eventsByDay[dayKey]=eventsByDay[dayKey]||[];
-          eventsByDay[dayKey].push({
-            title:it.summary||'(sans titre)',
-            start:s.toISOString(),
-            end:e?e.toISOString():null,
-            allDay:false,
-            calendarKey:cal.key
-          });
+          eventsByDay[dayKey].push({title:it.summary||'(sans titre)',start:s.toISOString(),end:e?e.toISOString():null,allDay:false,calendarKey:cal.key});
         }
       }
     }
@@ -465,18 +431,36 @@ async function renderCalendar(){
   }
 }
 
-document.getElementById('prev-week').onclick=()=>{
+// ---------------------------
+// NAVIGATION ET BOUTONS
+// ---------------------------
+document.getElementById('prev-week').onclick = ()=>{
   gridStartDate.setDate(gridStartDate.getDate()-7);
   renderCalendar();
 };
-
-document.getElementById('next-week').onclick=()=>{
+document.getElementById('next-week').onclick = ()=>{
   gridStartDate.setDate(gridStartDate.getDate()+7);
   renderCalendar();
 };
+document.getElementById('btn-today').onclick = ()=>{
+  gridStartDate = computeGridStart(new Date());
+  renderCalendar();
+};
+document.getElementById('btn-compact').onclick = ()=>{
+  document.body.classList.toggle('compact');
+};
+document.getElementById('btn-fullscreen').onclick = ()=>{
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+};
 
+// ---------------------------
+// INITIAL RENDER
+// ---------------------------
 renderCalendar();
 </script>
-
 </body>
 </html>
