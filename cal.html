@@ -97,7 +97,7 @@ header h1.visible{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s ease, width 0.35s ease, background 0.25s ease, box-shadow 0.35s ease, border-color 0.25s ease, opacity 0.3s ease;
+  transition: transform 0.35s ease, background 0.25s ease, box-shadow 0.35s ease, border-color 0.25s ease;
 }
 .day.today {
   background:#1f2226;
@@ -178,6 +178,14 @@ header h1.visible{
 
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
+
+/* Hover smooth pour jours actuels et futurs */
+.day.today:hover, .day.future:hover{
+  transform: scale(1.12);
+  z-index:10;
+  box-shadow:0 8px 20px rgba(0,229,255,0.3);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
 </style>
 </head>
 <body>
@@ -307,8 +315,9 @@ async function renderCalendar(){
       }
     }
 
-    // création des cases
     const todayStr=fmtDate(new Date());
+
+    // création des cases
     dates.forEach(d=>{
       const dayEl=document.createElement('div');
       const dateStr=fmtDate(d);
@@ -347,31 +356,6 @@ async function renderCalendar(){
         moreEl.className='event more';
         moreEl.textContent=`+ ${evList.length-MAX_PER_CELL} autres`;
         eventsContainer.appendChild(moreEl);
-      }
-
-      // Zoom largeur uniquement pour jours actuels/futurs avec événements
-      if((dayEl.classList.contains('today') || dayEl.classList.contains('future')) && evList.length>0){
-        dayEl.addEventListener('mouseenter', ()=>{
-          let maxWidth=0;
-          dayEl.querySelectorAll('.event .title').forEach(titleEl=>{
-            const clone=titleEl.cloneNode(true);
-            clone.style.position='absolute';
-            clone.style.visibility='hidden';
-            clone.style.whiteSpace='nowrap';
-            document.body.appendChild(clone);
-            maxWidth=Math.max(maxWidth, clone.scrollWidth);
-            document.body.removeChild(clone);
-          });
-          const gridWidth = gridEl.clientWidth;
-          const cellWidth = Math.min(maxWidth+40, gridWidth/7 - 4);
-          dayEl.style.width=cellWidth+'px';
-          dayEl.style.transition='width 0.35s ease, transform 0.35s ease';
-          dayEl.style.transform='scale(1.12)';
-        });
-        dayEl.addEventListener('mouseleave', ()=>{
-          dayEl.style.width='';
-          dayEl.style.transform='';
-        });
       }
     });
 
