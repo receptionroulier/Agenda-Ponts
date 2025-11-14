@@ -54,22 +54,15 @@ header h1{
   font-size:16px;
   cursor:pointer;
   padding:4px 8px;
-  transition: background 0.3s, transform 0.3s;
+  transition: background 0.2s;
 }
-.nav-buttons button:hover { background: rgba(0,229,255,0.2); transform:scale(1.05);}
+.nav-buttons button:hover { background: rgba(0,229,255,0.2); }
 .calendar {
   background: var(--card);
   border-radius:12px;
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
-  opacity:0;
-  transform: translateY(20px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.calendar.visible{
-  opacity:1;
-  transform: translateY(0);
 }
 .grid {
   display:grid;
@@ -87,10 +80,16 @@ header h1{
   position:relative;
   display:flex;
   flex-direction:column;
-  transition: transform 0.35s ease, height 0.35s ease, width 0.35s ease, background 0.25s ease, box-shadow 0.35s ease, border-color 0.25s ease;
+  transition: transform 0.35s, height 0.35s, width 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+}
+/* Jour actuel */
+@keyframes todayPulse {
+  0%,100%{ transform: scale(1.08); }
+  50%{ transform: scale(1.12); }
 }
 .day.today {
   transform: scale(1.08);
+  animation: todayPulse 3s infinite ease-in-out;
   background:#1f2226;
   border:2px solid var(--accent);
   z-index:2;
@@ -103,15 +102,36 @@ header h1{
   pointer-events:none;
   box-shadow:0 0 20px 8px rgba(0,229,255,0.5);
 }
+/* Jour futur */
+@keyframes futurePulse {
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
 .day.future {
   transform: scale(1);
   background:#1c1f23;
   color:#eaeaea;
+  animation: futurePulse 3s infinite ease-in-out;
 }
+/* Jour passé */
 .day.past {
   transform: scale(0.95);
   background:#0f1113;
   color:#555;
+}
+.day.today:hover {
+  animation:none;
+  transform: scale(1.18);
+  height:auto;
+  z-index:10;
+  box-shadow: 0 12px 40px rgba(0,229,255,0.6);
+}
+.day.future:hover {
+  animation:none;
+  transform: scale(1.12);
+  z-index:10;
+  height:auto;
+  box-shadow:0 8px 20px rgba(0,229,255,0.3);
 }
 .day:hover .event { white-space: normal; }
 .day-header{
@@ -248,16 +268,12 @@ function buildDates(start){
 }
 
 async function renderCalendar(){
-  const calendarEl=document.getElementById('calendar-root');
-  calendarEl.classList.remove('visible');
-
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
   document.getElementById('month-title').textContent=monthNames[dates[7].getMonth()]+' '+dates[7].getFullYear();
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
-
   dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
@@ -351,39 +367,9 @@ async function renderCalendar(){
       else dayEl.classList.add('future');
     }
 
-    // Zoom largeur pour jours actuels et futurs seulement si ils contiennent des événements
-    const gridWidth = document.getElementById('grid').clientWidth;
-    document.querySelectorAll('.day.today, .day.future').forEach(day=>{
-      const events = day.querySelectorAll('.event');
-      if(events.length===0) return; // pas de redimension si vide
-      day.addEventListener('mouseenter', e=>{
-        let maxWidth=0;
-        events.forEach(ev=>{
-          const titleEl = ev.querySelector('.title');
-          const clone = titleEl.cloneNode(true);
-          clone.style.position='absolute';
-          clone.style.visibility='hidden';
-          clone.style.whiteSpace='nowrap';
-          document.body.appendChild(clone);
-          maxWidth=Math.max(maxWidth, clone.scrollWidth);
-          document.body.removeChild(clone);
-        });
-        const cellWidth = Math.min(maxWidth + 40, gridWidth/7 - 4);
-        day.style.width = cellWidth+'px';
-        day.style.transition='width 0.35s ease, transform 0.35s ease';
-        day.style.transform='scale(1.12)';
-      });
-      day.addEventListener('mouseleave', e=>{
-        day.style.width='';
-        day.style.transform='';
-      });
-    });
-
   }catch(err){
     console.error('Erreur lors du chargement des événements :',err);
   }
-
-  calendarEl.classList.add('visible');
 }
 
 // navigation
