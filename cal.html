@@ -2,8 +2,8 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - personnalisé</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calendrier 4 semaines - responsive</title>
 
 <style>
 :root{
@@ -54,62 +54,61 @@ header h1{
   padding:12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.5);
   width: 100%;
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
 }
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
   gap: var(--gap);
+  flex: 1;
 }
 .day {
   background: #141619;
   border-radius:12px;
-  min-height:150px;
-  padding:12px;
+  padding:8px;
   box-sizing:border-box;
   border:1px solid var(--border);
-  overflow:hidden;
+  overflow:visible;
   transition: transform 0.3s, background 0.3s, color 0.3s;
   position:relative;
+  display: flex;
+  flex-direction: column;
 }
 .day.today {
-  transform: scale(1.1);
+  transform: scale(1.08);
   z-index:2;
   background-color: #1f2226;
   box-shadow: 0 0 20px rgba(0,229,255,0.3);
 }
-.day.past {
-  background-color: #0f1113;
-  color:#555;
-  transform: scale(0.95);
-}
-.day.future {
-  background-color: #1c1f23;
-  color:#eaeaea;
-}
+.day.past { background-color: #0f1113; color:#555; }
+.day.future { background-color: #1c1f23; color:#eaeaea; }
+
 .day-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
   font-size:var(--days-font);
-  margin-bottom:6px;
+  margin-bottom:4px;
 }
 .day .date {
   font-weight:600;
   font-size:14px;
 }
-/* === MODIFICATION : plus de scroll dans les events === */
 .events {
   display:flex;
   flex-direction:column;
   gap:2px;
-  overflow: visible;  /* plus de scroll */
-  max-height: none;   /* hauteur auto */
+  overflow:visible;
+  flex:1;
 }
 .event {
   display:flex;
   gap:4px;
   align-items:center;
-  padding:4px;
+  padding:2px 4px;
   border-radius:6px;
   font-size:var(--event-font);
   line-height:1.05;
@@ -119,19 +118,12 @@ header h1{
   transition: background 0.2s;
 }
 .event:hover { background: rgba(0,0,0,0.5); }
-.event .time {
-  min-width:50px;
-  font-weight:600;
-  font-size:11px;
-}
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
 .event.allDay .time { display:none; }
-.event.more {
-  font-size:12px;
-  color:var(--muted);
-  padding-left:6px;
-}
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
 .c-reception { color:#109c53; }
 .c-smr { color:#5768cb; }
+
 /* Popup */
 #popup {
   position:fixed;
@@ -150,6 +142,7 @@ header h1{
 }
 #popup h3 { margin-top:0; margin-bottom:8px; }
 #popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
+
 /* Responsive */
 @media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
 @media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
@@ -190,7 +183,7 @@ function fmtTime(dt){if(!dt) return ''; const d=new Date(dt); return pad(d.getHo
 function fmtPopupDate(dt){ const d=new Date(dt); const dayNames=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]; return dayNames[d.getDay()]+' '+d.getDate(); }
 function shortTitle(s,max=60){if(!s)return ''; return s.length>max?s.slice(0,max-1)+'…':s;}
 
-// Variables de navigation
+// navigation
 let gridStartDate;
 function computeGridStart(referenceDate){
   const today = new Date(referenceDate);
@@ -236,7 +229,7 @@ function buildDates(start){
   return dates;
 }
 
-// render grid
+// render calendar
 async function renderCalendar(){
   const dates = buildDates(gridStartDate);
   const monthNames=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -244,6 +237,7 @@ async function renderCalendar(){
 
   const gridEl=document.getElementById('grid');
   gridEl.innerHTML='';
+
   dates.forEach(d=>{
     const dayEl=document.createElement('div');
     dayEl.className='day';
@@ -255,7 +249,7 @@ async function renderCalendar(){
   const timeMin=new Date(dates[0]); timeMin.setHours(0,0,0,0);
   const timeMax=new Date(dates[dates.length-1]); timeMax.setHours(23,59,59,999);
 
-  try{
+  try {
     const promises=CALENDARS.map(c=>fetchEventsForCalendar(c.id,timeMin.toISOString(),timeMax.toISOString()).then(json=>({calendar:c,items:json.items||[]})).catch(err=>({calendar:c,error:err})));
     const results=await Promise.all(promises);
 
@@ -336,7 +330,7 @@ async function renderCalendar(){
       else dayEl.classList.add('future');
     }
 
-  }catch(err){
+  } catch(err){
     console.error('Erreur lors du chargement des événements :',err);
   }
 }
@@ -356,3 +350,4 @@ renderCalendar();
 </script>
 </body>
 </html>
+
