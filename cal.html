@@ -1,39 +1,212 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Calendrier 4 semaines - fixe</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendrier</title>
 <style>
-:root{
-  --bg:#121212;
-  --card:#1c1f23;
-  --border:#555;
-  --text:#eaeaea;
-  --muted:#999;
-  --accent:#00e5ff;
-  --gap:4px;
-  --days-font:14px;
-  --event-font:14px;
+:root {
+  --accent: #00e5ff;
+  --card: #1c1f23;
+  --border: #333;
+  --gap: 8px;
+  --days-font: 14px;
+  --event-font: 12px;
+  --muted: #888;
 }
-body{
-  margin:0;
-  font-family:Inter, system-ui, Arial, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  padding:16px;
+
+/* Calendrier */
+body { margin:0; font-family:sans-serif; background:#0f1113; color:#fff; }
+header { display:flex; justify-content:space-between; align-items:center; padding:12px; }
+header button { background:none; border:none; color:var(--accent); font-size:20px; cursor:pointer; transition: background 0.2s; }
+header button:hover { background: rgba(0,229,255,0.2); border-radius:4px; }
+header h1 { margin:0; font-size:24px; color:var(--accent); }
+
+.calendar { background: var(--card); border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.5); width:100%; }
+.grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: var(--gap); }
+
+.day {
+  background: #141619;
+  border-radius:12px;
+  height: calc((100vh - 100px)/4); /* 4 semaines */
+  padding:8px;
   box-sizing:border-box;
-}
-.container{
-  max-width:1600px;
-  margin:0 auto;
-}
-header{
+  border:1px solid var(--border);
+  overflow:hidden;
+  position:relative;
   display:flex;
-  justify-content:center;
+  flex-direction:column;
+  transition: transform 0.35s, background 0.25s, box-shadow 0.35s, border-color 0.25s;
+}
+
+/* Jour actuel */
+@keyframes pulse-today {
+  0%,100% { transform: scale(1.08); }
+  50% { transform: scale(1.12); }
+}
+.day.today {
+  transform: scale(1.08);
+  animation: pulse-today 3s infinite ease-in-out;
+  background:#1f2226;
+  border:2px solid var(--accent);
+  z-index:2;
+}
+.day.today::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  pointer-events:none;
+  box-shadow:0 0 20px 8px rgba(0,229,255,0.3);
+}
+
+/* Past / Future */
+.day.past { transform: scale(0.95); background:#0f1113; color:#555; }
+@keyframes pulse-future { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+.day.future { transform: scale(1); background:#1c1f23; color:#eaeaea; animation: pulse-future 4s ease-in-out infinite; }
+
+/* Hover pour tous les jours */
+.day:hover {
+  transform: scale(1.22);
+  z-index:10;
+  background-color:#23272c;
+  box-shadow:0 12px 40px rgba(0,0,0,0.45);
+  overflow:visible;
+}
+.day:hover .event { white-space: normal; }
+
+.day-header { display:flex; justify-content:space-between; align-items:center; font-size:var(--days-font); margin-bottom:2px; }
+.day .date { font-weight:600; font-size:var(--days-font); }
+.events { flex:1 1 auto; display:flex; flex-direction:column; gap:2px; overflow:hidden; }
+
+.event {
+  display:flex;
   align-items:center;
-  margin-bottom:10px;
+  gap:4px;
+  padding:2px 4px;
+  font-size:var(--event-font);
+  border-radius:6px;
+  background: rgba(0,0,0,0.3);
+  cursor:pointer;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.event:hover { background: rgba(0,0,0,0.5); }
+.event .time { min-width:50px; font-weight:600; font-size:11px; }
+.event.allDay .time { display:none; }
+.event.more { font-size:12px; color:var(--muted); padding-left:6px; }
+.event .title { text-align:left; }
+.c-reception { color:#109c53; }
+.c-smr { color:#5768cb; }
+
+/* Popup */
+#popup {
+  position: fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%,-50%);
+  background:#1c1f23;
+  color:#fff;
+  padding:16px;
+  border-radius:12px;
+  box-shadow:0 0 20px rgba(0,0,0,0.8);
+  z-index:20;
+  max-width:90%;
+  min-width:300px;
+  display:none;
+}
+#popup h3 { margin-top:0; margin-bottom:8px; }
+#popup .close { position:absolute; top:8px; right:12px; cursor:pointer; font-weight:bold; font-size:18px; }
+
+/* Responsive */
+@media(max-width:900px){ .grid{ grid-template-columns: repeat(2,1fr); } }
+@media(max-width:520px){ .grid{ grid-template-columns: repeat(1,1fr); } }
+</style>
+</head>
+<body>
+
+<header>
+  <button id="prev">&lt;</button>
+  <h1 id="month-title">Mois</h1>
+  <button id="next">&gt;</button>
+</header>
+
+<div class="calendar">
+  <div class="grid" id="calendar-grid"></div>
+</div>
+
+<div id="popup">
+  <span class="close" onclick="closePopup()">×</span>
+  <h3 id="popup-title"></h3>
+  <p id="popup-content"></p>
+</div>
+
+<script>
+// --- Configuration ---
+const API_KEY = "VOTRE_API_KEY"; // déclaration UNIQUE
+
+// Mock events pour test
+const events = [
+  { date:"2025-11-03", title:"VAQ MERCURY ACE✅", time:"07:00", category:"c-reception" },
+  { date:"2025-11-05", title:"VAQ LAKE COMO✅", time:"11:00", category:"c-smr" },
+  { date:"2025-11-07", title:"Viking Destiny", time:"23:00", category:"" },
+  // Ajoutez plus d'événements ici
+];
+
+// --- Génération du calendrier ---
+const calendarGrid = document.getElementById("calendar-grid");
+const today = new Date();
+const month = today.getMonth();
+const year = today.getFullYear();
+
+document.getElementById("month-title").textContent = today.toLocaleString('fr-FR',{month:'long', year:'numeric'});
+
+function generateCalendar(){
+  calendarGrid.innerHTML = "";
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  const totalDays = lastDay.getDate();
+  for(let i=1;i<=totalDays;i++){
+    const dayDate = new Date(year, month, i);
+    const dayDiv = document.createElement("div");
+    dayDiv.classList.add("day");
+    if(dayDate.toDateString() === today.toDateString()) dayDiv.classList.add("today");
+    else if(dayDate < today) dayDiv.classList.add("past");
+    else dayDiv.classList.add("future");
+
+    dayDiv.innerHTML = `
+      <div class="day-header"><span class="date">${i}</span></div>
+      <div class="events"></div>
+    `;
+    // Ajouter les events
+    const dayEventsDiv = dayDiv.querySelector(".events");
+    events.filter(e=>e.date===dayDate.toISOString().split('T')[0]).forEach(ev=>{
+      const evDiv = document.createElement("div");
+      evDiv.className = `event ${ev.category||""}`;
+      evDiv.innerHTML = `<span class="time">${ev.time||""}</span> <span class="title">${ev.title}</span>`;
+      evDiv.onclick = ()=>showPopup(ev.title, ev.time);
+      dayEventsDiv.appendChild(evDiv);
+    });
+
+    calendarGrid.appendChild(dayDiv);
+  }
+}
+
+function showPopup(title, time){
+  document.getElementById("popup-title").textContent = title;
+  document.getElementById("popup-content").textContent = time;
+  document.getElementById("popup").style.display = "block";
+}
+
+function closePopup(){
+  document.getElementById("popup").style.display = "none";
+}
+
+generateCalendar();
+</script>
+</body>
+</html>
   gap:20px;
 }
 header button{
